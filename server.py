@@ -22,16 +22,16 @@ class Server:
         Binds server to host IP and port.
         """
         logging.info("Creating socket...")
-        ServerSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         logging.info("Socket created")
         try:
             logging.debug(f"Binding server socket to {self.host} : {self.port}...")
-            ServerSocket.bind((self.host, self.port))
+            server_socket.bind((self.host, self.port))
             logging.info(f"Server socket bound to {self.host} : {self.port}")
         except socket.error as e:
             logging.error(e)
         logging.info(f"Server is listening on port {self.port}...")
-        ServerSocket.listen()
+        server_socket.listen()
 
 
 if __name__ == '__main__':
