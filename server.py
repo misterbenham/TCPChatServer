@@ -13,7 +13,6 @@ class Server:
     """
 
     def __init__(self, host, port):
-        super().__init__()
         self.host = host
         self.port = port
 
@@ -30,7 +29,7 @@ class Server:
             ServerSocket.bind((self.host, self.port))
             logging.info(f"Server socket bound to {self.host} : {self.port}")
         except socket.error as e:
-            logging.info(e)
+            logging.error(e)
         logging.info(f"Server is listening on port {self.port}...")
         ServerSocket.listen()
 
