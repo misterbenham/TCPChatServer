@@ -10,12 +10,12 @@ class Client:
     def __init__(self, host, port):
         self.host = host
         self.port = port
-        self.ClientSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
     def connect_to_server(self):
         try:
             logging.debug(f"Trying to connect to {self.host} : {self.port}...")
-            self.ClientSocket.connect((self.host, self.port))
+            self.client_socket.connect((self.host, self.port))
             logging.info(f"Successfully connected to {self.host} : {self.port}")
         except socket.error as e:
             logging.error(e)
