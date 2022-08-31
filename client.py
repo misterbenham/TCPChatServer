@@ -6,17 +6,21 @@ logging.basicConfig(format='%(levelname)s:%(message)s', level=logging.INFO)
 
 
 class Client:
-
-    def __init__(self, host, port):
+    """
+    The client socket is created and attempts to connect to
+    the server on the defined host IP and port.
+    """
+    def __init__(self, host: str, port: int):
         self.host = host
         self.port = port
         self.client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
     def connect_to_server(self):
+
         try:
-            logging.debug(f"Trying to connect to {self.host} : {self.port}...")
+            logging.debug(f" Trying to connect to {self.host} : {self.port}...")
             self.client_socket.connect((self.host, self.port))
-            logging.info(f"Successfully connected to {self.host} : {self.port}")
+            logging.info(f" Successfully connected to {self.host} : {self.port}")
         except socket.error as e:
             logging.error(e)
 
