@@ -2,8 +2,6 @@ import logging
 import socket
 import threading
 
-from _thread import *
-from multiprocessing import Process
 
 logging.basicConfig(format='%(levelname)s:%(message)s', level=logging.INFO)
 
@@ -20,8 +18,6 @@ class Server:
         self.host = host
         self.port = port
         self.new_connections = []
-        self.client_socket = socket.socket()
-        self.client_address = tuple()
 
     def run(self):
         """
@@ -46,7 +42,8 @@ class Server:
                 client_socket, client_address = server_socket.accept()
                 logging.info(f" Accepted a new connection from {client_socket.getpeername()}")
                 self.new_connections.append((client_socket, client_address))
-                start_new_thread(self.handle_client_connection, (client_socket, client_address))
+                new_client_thread = threading.Thread(target=self.handle_client_connection(client_socket, client_address))
+                new_client_thread.start()
             except socket.error as e:
                 logging.error(e)
 
