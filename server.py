@@ -1,6 +1,9 @@
 import logging
 import socket
+import threading
 
+from _thread import *
+from multiprocessing import Process
 
 logging.basicConfig(format='%(levelname)s:%(message)s', level=logging.INFO)
 
@@ -17,6 +20,8 @@ class Server:
         self.host = host
         self.port = port
         self.new_connections = []
+        self.client_socket = socket.socket()
+        self.client_address = tuple()
 
     def run(self):
         """
@@ -38,27 +43,26 @@ class Server:
         while True:
             # Accept new connection
             try:
-                sc, sock_name = server_socket.accept()
-                logging.info(f" Accepted a new connection from {sc.getpeername()}")
-                new_conn = Connection()
-                new_conn.start_connection(sc, sock_name)
-                self.new_connections.append(new_conn)
+                client_socket, client_address = server_socket.accept()
+                logging.info(f" Accepted a new connection from {client_socket.getpeername()}")
+                self.new_connections.append((client_socket, client_address))
+                start_new_thread(self.handle_client_connection, (client_socket, client_address))
             except socket.error as e:
                 logging.error(e)
 
-
-class Connection:
-    """
-    Starts the client connection and implements
-    send/receive data functionality.
-    """
-    def __init__(self):
-        self.client_socket = socket.socket()
-        self.client_address = tuple()
-
-    def start_connection(self, sock: socket, addr: (str, int)):
-        self.client_socket = sock
-        self.client_address = addr
+    def handle_client_connection(self, client_socket, client_address):
+        while True:
+            # receive data from client
+            data = client_socket.recv(2048)
+            # break if connection is closed and remove client from list
+            if not data:
+                logging.info(f' [CONNECTION CLOSED] : {client_socket}')
+                self.new_connections.remove((client_socket, client_address))
+                break
+            # send data to the client
+            client_socket.sendall(data)
+            # connection closed
+        client_socket.close()
 
 
 if __name__ == '__main__':
