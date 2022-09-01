@@ -4,7 +4,7 @@ import threading
 
 
 logging.basicConfig(format='%(levelname)s:%(message)s', level=logging.INFO)
-UTF = "utf-8"
+ENCODE = "utf-8"
 
 
 class Server:
@@ -60,7 +60,7 @@ class Server:
         """
         for client_socket in self.clients:
             if client_socket is not sender:
-                client_socket.send(message.encode(UTF))
+                client_socket.send(message.encode(ENCODE))
 
     def handle_client_connection(self, client_socket):
         """
@@ -70,7 +70,7 @@ class Server:
             # receive data from client
             try:
                 data = client_socket.recv(2048)
-                message = data.decode(UTF)
+                message = data.decode(ENCODE)
                 self.broadcast(message, client_socket)
                 if message == 'QUIT':
                     index = self.clients.index(client_socket)
