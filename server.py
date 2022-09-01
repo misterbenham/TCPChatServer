@@ -4,6 +4,7 @@ import threading
 
 
 logging.basicConfig(format='%(levelname)s:%(message)s', level=logging.INFO)
+UTF = "utf-8"
 
 
 class Server:
@@ -18,7 +19,6 @@ class Server:
         self.host = host
         self.port = port
         self.clients = []
-        self.usernames = []
 
     def run(self):
         """
@@ -47,7 +47,7 @@ class Server:
             try:
                 client_socket, client_address = server_socket.accept()
                 logging.info(f" Accepted a new connection from {client_socket.getpeername()}")
-                self.clients.append((client_socket, client_address))
+                self.clients.append(client_socket)
                 client_thread = threading.Thread(target=self.handle_client_connection(client_socket,))
                 client_thread.start()
             except socket.error as e:
@@ -60,7 +60,7 @@ class Server:
         """
         for client_socket in self.clients:
             if client_socket is not sender:
-                client_socket[0].send(message.encode('utf-8'))
+                client_socket.send(message.encode(UTF))
 
     def handle_client_connection(self, client_socket):
         """
@@ -70,15 +70,12 @@ class Server:
             # receive data from client
             try:
                 data = client_socket.recv(2048)
-                message = data.decode('utf-8')
+                message = data.decode(UTF)
                 self.broadcast(message, client_socket)
                 if message == 'QUIT':
                     index = self.clients.index(client_socket)
                     self.clients.remove(client_socket)
                     client_socket.close()
-                    username = self.usernames[index]
-                    self.broadcast(f'{username} has left the chat!'.encode('utf-8'), client_socket)
-                    self.usernames.remove(username)
                     break
                 reply = f'Server: {message} : {client_socket.getpeername()}'
                 client_socket.sendall(str.encode(reply))
