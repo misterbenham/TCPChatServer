@@ -18,6 +18,7 @@ class Server:
         self.host = host
         self.port = port
         self.clients = []
+        self.usernames = []
 
     def run(self):
         """
@@ -35,38 +36,63 @@ class Server:
             logging.error(e)
         logging.info(f" Server is listening on port {self.port}...")
         server_socket.listen()
+        self.receive(server_socket)
 
+    def receive(self, server_socket):
+        """
+        Receive clients connections.
+        """
         while True:
             # Accept new connection
             try:
                 client_socket, client_address = server_socket.accept()
                 logging.info(f" Accepted a new connection from {client_socket.getpeername()}")
                 self.clients.append((client_socket, client_address))
-                new_client_thread = threading.Thread(target=self.handle_client_connection(client_socket, client_address))
-                new_client_thread.start()
+                client_thread = threading.Thread(target=self.handle_client_connection(client_socket,))
+                client_thread.start()
             except socket.error as e:
                 logging.error(e)
 
-    def handle_client_connection(self, client_socket, client_address):
+    def broadcast(self, message, sender):
+        """
+        Function to broadcast messages to all connected clients,
+        except the sender client.
+        """
+        for client_socket in self.clients:
+            if client_socket is not sender:
+                client_socket[0].send(message.encode('utf-8'))
+
+    def handle_client_connection(self, client_socket):
+        """
+        Function to handle clients connections.
+        """
         while True:
             # receive data from client
-            data = client_socket.recv(2048)
-            message = data.decode('utf-8')
-            if message == 'QUIT':
-                logging.info(f'{client_socket.getpeername()} has left the chat.')
-                self.clients.remove((client_socket, client_address))
-                break
-            reply = f'Server: {message}'
-            client_socket.sendall(str.encode(reply))
-            logging.info({reply})
-            # break if connection is closed and remove client from list
-            if not data:
-                logging.info(f' [CONNECTION CLOSED] : {client_socket}')
-                self.clients.remove((client_socket, client_address))
-                break
-            client_socket.sendall(data)
-            # send data to the client
-            # connection closed
+            try:
+                data = client_socket.recv(2048)
+                message = data.decode('utf-8')
+                self.broadcast(message, client_socket)
+                if message == 'QUIT':
+                    index = self.clients.index(client_socket)
+                    self.clients.remove(client_socket)
+                    client_socket.close()
+                    username = self.usernames[index]
+                    self.broadcast(f'{username} has left the chat!'.encode('utf-8'), client_socket)
+                    self.usernames.remove(username)
+                    break
+                reply = f'Server: {message} : {client_socket.getpeername()}'
+                client_socket.sendall(str.encode(reply))
+                logging.info({reply})
+                # break if connection is closed and remove client from list
+                if not data:
+                    logging.info(f' [CONNECTION CLOSED] : {client_socket}')
+                    self.clients.remove(client_socket)
+                    break
+                client_socket.sendall(data)
+                # send data to the client
+            except socket.error as e:
+                logging.error(e)
+        # connection closed
         client_socket.close()
 
 
