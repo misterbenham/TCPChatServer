@@ -17,7 +17,7 @@ class Server:
     def __init__(self, host: str, port: int):
         self.host = host
         self.port = port
-        self.new_connections = []
+        self.clients = []
 
     def run(self):
         """
@@ -41,7 +41,7 @@ class Server:
             try:
                 client_socket, client_address = server_socket.accept()
                 logging.info(f" Accepted a new connection from {client_socket.getpeername()}")
-                self.new_connections.append((client_socket, client_address))
+                self.clients.append((client_socket, client_address))
                 new_client_thread = threading.Thread(target=self.handle_client_connection(client_socket, client_address))
                 new_client_thread.start()
             except socket.error as e:
@@ -51,13 +51,21 @@ class Server:
         while True:
             # receive data from client
             data = client_socket.recv(2048)
+            message = data.decode('utf-8')
+            if message == 'QUIT':
+                logging.info(f'{client_socket.getpeername()} has left the chat.')
+                self.clients.remove((client_socket, client_address))
+                break
+            reply = f'Server: {message}'
+            client_socket.sendall(str.encode(reply))
+            logging.info({reply})
             # break if connection is closed and remove client from list
             if not data:
                 logging.info(f' [CONNECTION CLOSED] : {client_socket}')
-                self.new_connections.remove((client_socket, client_address))
+                self.clients.remove((client_socket, client_address))
                 break
-            # send data to the client
             client_socket.sendall(data)
+            # send data to the client
             # connection closed
         client_socket.close()
 
