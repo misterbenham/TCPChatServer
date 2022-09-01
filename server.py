@@ -51,13 +51,20 @@ class Server:
         while True:
             # receive data from client
             data = client_socket.recv(2048)
+            message = data.decode('utf-8')
+            if message == 'QUIT':
+                logging.info(f'{client_socket.getpeername()} has left the chat.')
+                break
+            reply = f'Server: {message}'
+            client_socket.sendall(str.encode(reply))
+            logging.info({reply})
             # break if connection is closed and remove client from list
             if not data:
                 logging.info(f' [CONNECTION CLOSED] : {client_socket}')
                 self.new_connections.remove((client_socket, client_address))
                 break
-            # send data to the client
             client_socket.sendall(data)
+            # send data to the client
             # connection closed
         client_socket.close()
 

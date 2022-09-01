@@ -21,6 +21,10 @@ class Client:
             logging.debug(f" Trying to connect to {self.host} : {self.port}...")
             self.client_socket.connect((self.host, self.port))
             logging.info(f" Successfully connected to {self.host} : {self.port}")
+            # Testing code below
+            while True:
+                msg = input("Enter a message: ")
+                self.client_socket.sendall(str.encode(msg))
         except socket.error as e:
             logging.error(e)
 
