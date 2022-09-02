@@ -21,33 +21,26 @@ class Client:
             logging.debug(f" Trying to connect to {self.host} : {self.port}...")
             self.client_socket.connect((self.host, self.port))
             logging.info(f" Successfully connected to {self.host} : {self.port}")
-
+            send_thread = threading.Thread(target=self.client_send)
+            send_thread.start()
+            while True:
+                try:
+                    msg = self.client_socket.recv(2048).decode(ENCODE)
+                    logging.info(msg)
+                except socket.error as e:
+                    logging.error(e)
+                    self.client_socket.close()
+                break
         except socket.error as e:
             logging.error(e)
-
-    def client_receive(self):
-        while True:
-            try:
-                msg = self.client_socket.recv(2048).decode(ENCODE)
-                logging.info(msg)
-            except socket.error as e:
-                logging.error(e)
-                self.client_socket.close()
-            break
 
     def client_send(self):
         while True:
             try:
-                msg = f'USER MESSAGE: {input("")}'
+                msg = input("User: ")
                 self.client_socket.send(msg.encode(ENCODE))
             except socket.error as e:
                 logging.error(e)
-
-    receive_thread = threading.Thread(target=client_receive)
-    receive_thread.start()
-
-    send_thread = threading.Thread(target=client_send)
-    send_thread.start()
 
 
 if __name__ == '__main__':

@@ -36,12 +36,7 @@ class Server:
             logging.error(e)
         logging.info(f" Server is listening on port {self.port}...")
         server_socket.listen()
-        self.receive(server_socket)
 
-    def receive(self, server_socket):
-        """
-        Receive clients connections.
-        """
         while True:
             # Accept new connection
             try:
@@ -90,7 +85,7 @@ class Server:
             except socket.error as e:
                 logging.error(e)
         # connection closed
-        client_socket.close()
+        # client_socket.close()
 
 
 if __name__ == '__main__':
