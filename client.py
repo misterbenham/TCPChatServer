@@ -30,7 +30,7 @@ class Client:
                 except socket.error as e:
                     logging.error(e)
                     self.client_socket.close()
-                break
+                    break
         except socket.error as e:
             logging.error(e)
 

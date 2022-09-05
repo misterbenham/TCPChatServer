@@ -43,7 +43,8 @@ class Server:
                 client_socket, client_address = server_socket.accept()
                 logging.info(f" Accepted a new connection from {client_socket.getpeername()}")
                 self.clients.append(client_socket)
-                client_thread = threading.Thread(target=self.handle_client_connection(client_socket,))
+                client_thread = threading.Thread(target=self.handle_client_connection,
+                                                 args=(client_socket, client_address))
                 client_thread.start()
             except socket.error as e:
                 logging.error(e)
@@ -57,7 +58,7 @@ class Server:
             if client_socket is not sender:
                 client_socket.send(message.encode(ENCODE))
 
-    def handle_client_connection(self, client_socket):
+    def handle_client_connection(self, client_socket, client_address):
         """
         Function to handle clients connections.
         """
