@@ -36,19 +36,15 @@ class Server:
             logging.error(e)
         logging.info(f" Server is listening on port {self.port}...")
         server_socket.listen()
-        self.receive(server_socket)
 
-    def receive(self, server_socket):
-        """
-        Receive clients connections.
-        """
         while True:
             # Accept new connection
             try:
                 client_socket, client_address = server_socket.accept()
                 logging.info(f" Accepted a new connection from {client_socket.getpeername()}")
                 self.clients.append(client_socket)
-                client_thread = threading.Thread(target=self.handle_client_connection(client_socket,))
+                client_thread = threading.Thread(target=self.handle_client_connection,
+                                                 args=(client_socket, ))
                 client_thread.start()
             except socket.error as e:
                 logging.error(e)
@@ -89,6 +85,7 @@ class Server:
                 # send data to the client
             except socket.error as e:
                 logging.error(e)
+                break
         # connection closed
         client_socket.close()
 
