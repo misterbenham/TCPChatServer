@@ -20,6 +20,7 @@ class Server:
         self.host = host
         self.port = port
         self.clients = []
+        self.db = database.Database()
 
     def run(self):
         """
