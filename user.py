@@ -6,4 +6,3 @@ class User:
 
     def username(self, username):
         self.username = username
-

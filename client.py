@@ -1,6 +1,7 @@
 import logging
 import socket
 import threading
+import time
 
 logging.basicConfig(format='%(levelname)s:%(message)s', level=logging.INFO)
 ENCODE = "utf-8"
@@ -37,8 +38,9 @@ class Client:
     def client_send(self):
         while True:
             try:
-                msg = input("{username}: ")
-                self.client_socket.send(msg.encode(ENCODE))
+                msg = input("")
+                user_msg = f"Sender: " + msg
+                self.client_socket.send(user_msg.encode(ENCODE))
             except socket.error as e:
                 logging.error(e)
 
