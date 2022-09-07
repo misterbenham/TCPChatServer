@@ -26,7 +26,7 @@ class Client:
             while True:
                 try:
                     msg = self.client_socket.recv(2048).decode(ENCODE)
-                    logging.info(msg)
+                    print(msg)
                 except socket.error as e:
                     logging.error(e)
                     self.client_socket.close()
@@ -37,7 +37,7 @@ class Client:
     def client_send(self):
         while True:
             try:
-                msg = input("User: ")
+                msg = input("{username}: ")
                 self.client_socket.send(msg.encode(ENCODE))
             except socket.error as e:
                 logging.error(e)
