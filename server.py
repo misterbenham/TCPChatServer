@@ -1,3 +1,4 @@
+import database
 import logging
 import socket
 import threading
@@ -19,6 +20,7 @@ class Server:
         self.host = host
         self.port = port
         self.clients = []
+        self.db = database.Database()
 
     def run(self):
         """
@@ -49,15 +51,6 @@ class Server:
             except socket.error as e:
                 logging.error(e)
 
-    def broadcast(self, message, sender):
-        """
-        Function to broadcast messages to all connected clients,
-        except the sender client.
-        """
-        for client_socket in self.clients:
-            if client_socket is not sender:
-                client_socket.send(message.encode(ENCODE))
-
     def handle_client_connection(self, client_socket):
         """
         Function to handle clients connections.
@@ -70,7 +63,7 @@ class Server:
                 self.broadcast(message, client_socket)
                 if message == 'QUIT':
                     index = self.clients.index(client_socket)
-                    self.clients.remove(client_socket)
+                    self.clients.remove(index)
                     client_socket.close()
                     break
                 reply = f'Server: {message} : {client_socket.getpeername()}'
@@ -88,6 +81,15 @@ class Server:
                 break
         # connection closed
         client_socket.close()
+
+    def broadcast(self, message, sender):
+        """
+        Function to broadcast messages to all connected clients,
+        except the sender client.
+        """
+        for client_socket in self.clients:
+            if client_socket is not sender:
+                client_socket.send(message.encode(ENCODE))
 
 
 if __name__ == '__main__':
