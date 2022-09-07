@@ -92,9 +92,10 @@ class Server:
         Function to broadcast messages to all connected clients,
         except the sender client.
         """
+        user_msg = f"{sender.getpeername()}: " + message
         for client_socket in self.clients:
             if client_socket is not sender:
-                client_socket.send(message.encode(ENCODE))
+                client_socket.send(user_msg.encode(ENCODE))
 
 
 if __name__ == '__main__':
