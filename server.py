@@ -23,7 +23,6 @@ class Server:
         self.port = port
         self.clients = []
         self.db = database.Database()
-        self.message_out = ""
 
     def run(self):
         """
@@ -72,15 +71,12 @@ class Server:
                     self.clients.remove(index)
                     client_socket.close()
                     break
-                reply = f'Server: {message} : {client_socket.getpeername()}'
-                client_socket.sendall(str.encode(reply))
-                logging.info({reply})
                 # break if connection is closed and remove client from list
                 if not data:
                     logging.info(f' [CONNECTION CLOSED] : {client_socket}')
                     self.clients.remove(client_socket)
                     break
-                client_socket.sendall(data)
+                # client_socket.sendall(data)
                 # send data to the client
             except socket.error as e:
                 logging.error(e)
@@ -89,9 +85,7 @@ class Server:
         client_socket.close()
 
     def send_message(self, client_socket, msg):
-        self.message_out = msg
-        client_socket.send(self.message_out.encode(ENCODE))
-        self.message_out = ""
+        client_socket.send(msg.encode(ENCODE))
 
     def broadcast(self, message, sender):
         """
