@@ -11,4 +11,10 @@ class Database:
 
     def execute(self, new_data):
         self.cursor.execute(new_data)
-        
+
+    def commit(self):
+        self.connection.commit()
+
+    def create_users_table(self):
+        self.execute(f"CREATE TABLE IF NOT EXISTS users (username TEXT, password TEXT)")
+        self.commit()
