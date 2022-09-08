@@ -38,7 +38,7 @@ class Client:
     def client_send(self):
         while True:
             try:
-                msg = input("")
+                msg = input()
                 self.client_socket.send(msg.encode(ENCODE))
             except socket.error as e:
                 logging.error(e)

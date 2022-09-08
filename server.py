@@ -1,8 +1,8 @@
-import database
 import logging
 import socket
 import threading
 
+import database
 import user
 
 
@@ -22,7 +22,7 @@ class Server:
         self.host = host
         self.port = port
         self.clients = []
-        self.db = database.Database()
+        self.db = None
 
     def run(self):
         """
@@ -40,6 +40,8 @@ class Server:
             logging.error(e)
         logging.info(f" Server is listening on port {self.port}...")
         server_socket.listen()
+        self.db = database.Database()
+        self.db.create_users_table()
         while True:
             self.accept_connection(server_socket)
 
@@ -59,7 +61,7 @@ class Server:
         """
         Function to handle clients connections.
         """
-        self.send_message(client_socket, " Welcome to the chat server...")
+        self.send_message(client_socket, "Welcome to the chat server...")
         while True:
             # receive data from client
             try:
