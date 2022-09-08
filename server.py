@@ -61,7 +61,7 @@ class Server:
         """
         Function to handle clients connections.
         """
-        self.send_message(client_socket, "Welcome to the chat server...")
+        self.send_message(client_socket, "Welcome to the chat server! Press 1 to login: ")
         while True:
             # receive data from client
             try:
@@ -75,6 +75,8 @@ class Server:
                     client_socket.close()
                     break
                 # break if connection is closed and remove client from list
+                if message == "1":
+                    self.login(client_socket)
                 if not data:
                     logging.info(f' [CONNECTION CLOSED] : {client_socket}')
                     self.clients.remove(client_socket)
@@ -85,6 +87,21 @@ class Server:
                 break
         # connection closed
         client_socket.close()
+
+    def login(self, client_socket):
+        self.send_message(client_socket, "Enter username: ")
+        while True:
+            data = client_socket.recv(2048)
+            username = data.decode(ENCODE)
+            if self.db.is_valid_username(username):
+                self.send_message(client_socket, "Enter password: ")
+                data = client_socket.recv(2048)
+                pw = data.decode(ENCODE)
+                if self.db.is_valid_password(username, pw):
+                    self.send_message(client_socket, f"Credentials match. Welcome {username}!")
+            else:
+                self.send_message(client_socket, "Username not found. Please enter username: ")
+            return username
 
     def send_message(self, client_socket, msg):
         client_socket.send(msg.encode(ENCODE))
