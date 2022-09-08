@@ -101,6 +101,7 @@ class Server:
                     self.send_message(client_socket, f"Credentials match. Welcome {username}!")
                 else:
                     self.send_message(client_socket, "Incorrect credentials. Please enter username: ")
+                return
             else:
                 self.send_message(client_socket, "Username not found. Please enter username: ")
 
