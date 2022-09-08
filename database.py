@@ -18,3 +18,5 @@ class Database:
     def create_users_table(self):
         self.execute(f"CREATE TABLE IF NOT EXISTS users (username TEXT, password TEXT)")
         self.commit()
+
+

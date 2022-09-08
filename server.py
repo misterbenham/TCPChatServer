@@ -61,7 +61,7 @@ class Server:
         """
         Function to handle clients connections.
         """
-        self.send_message(client_socket, " Welcome to the chat server...")
+        self.send_message(client_socket, "Welcome to the chat server...")
         while True:
             # receive data from client
             try:
