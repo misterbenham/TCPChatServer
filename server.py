@@ -99,9 +99,9 @@ class Server:
                 pw = data.decode(ENCODE)
                 if self.db.is_valid_password(username, pw):
                     self.send_message(client_socket, f"Credentials match. Welcome {username}!")
+                    break
                 else:
                     self.send_message(client_socket, "Incorrect credentials. Please enter username: ")
-                return
             else:
                 self.send_message(client_socket, "Username not found. Please enter username: ")
 
