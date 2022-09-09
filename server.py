@@ -67,6 +67,12 @@ class Server:
             try:
                 data = client_socket.recv(2048)
                 message = data.decode(ENCODE)
+                if message == "1":
+                    self.login(client_socket)
+                if message == "2":
+                    if self.register(client_socket):
+                        self.login(client_socket)
+                #
                 self.broadcast(message, client_socket)
                 logging.info(f" {client_socket.getpeername()}" + ": " + message)
                 if message == 'QUIT':
@@ -74,18 +80,10 @@ class Server:
                     self.clients.remove(index)
                     client_socket.close()
                     break
-                # break if connection is closed and remove client from list
-                if message == "1":
-                    self.login(client_socket)
-                if message == "2":
-                    if self.register(client_socket):
-                        self.login(client_socket)
-
                 if not data:
                     logging.info(f' [CONNECTION CLOSED] : {client_socket}')
                     self.clients.remove(client_socket)
                     break
-                # send data to the client
             except socket.error as e:
                 logging.error(e)
                 break
