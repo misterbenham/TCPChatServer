@@ -61,17 +61,21 @@ class Server:
         """
         Function to handle clients connections.
         """
-        self.send_message(client_socket, "Welcome to the chat server! Press 1 to login or 2 to register: ")
+        self.send_message(client_socket, "Welcome to the chat server! "
+                                         "Press 1 to login or 2 to register: ")
         while True:
             # receive data from client
             try:
                 data = client_socket.recv(2048)
                 message = data.decode(ENCODE)
-                if message == "1":
-                    self.login(client_socket)
-                if message == "2":
-                    if self.register(client_socket):
+                while True:
+                    if message == "1":
                         self.login(client_socket)
+                    if message == "2":
+                        if self.register(client_socket):
+                            self.login(client_socket)
+                            return True
+                    self.open_chat_room(client_socket)
             except socket.error as e:
                 logging.error(e)
                 break
@@ -105,8 +109,7 @@ class Server:
                 pw = data.decode(ENCODE)
                 if self.db.find_user_pw_in_db(username, pw):
                     self.send_message(client_socket, f"Credentials match. Welcome {username}!")
-                    self.open_chat_room(client_socket)
-                    break
+                    return False
                 else:
                     self.send_message(client_socket, "Incorrect credentials. Please enter username: ")
             else:
