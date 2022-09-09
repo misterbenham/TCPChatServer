@@ -61,7 +61,7 @@ class Server:
         """
         Function to handle clients connections.
         """
-        self.send_message(client_socket, "Welcome to the chat server! Press 1 to login: ")
+        self.send_message(client_socket, "Welcome to the chat server! Press 1 to login or 2 to register: ")
         while True:
             # receive data from client
             try:
@@ -77,6 +77,10 @@ class Server:
                 # break if connection is closed and remove client from list
                 if message == "1":
                     self.login(client_socket)
+                if message == "2":
+                    if self.register(client_socket):
+                        self.login(client_socket)
+
                 if not data:
                     logging.info(f' [CONNECTION CLOSED] : {client_socket}')
                     self.clients.remove(client_socket)
@@ -104,6 +108,28 @@ class Server:
                     self.send_message(client_socket, "Incorrect credentials. Please enter username: ")
             else:
                 self.send_message(client_socket, "Username not found. Please enter username: ")
+
+    def register(self, client_socket):
+        self.send_message(client_socket, "Enter new username: ")
+        while True:
+            data = client_socket.recv(2048)
+            username = data.decode(ENCODE)
+            if not self.db.read_user_data(username):
+                self.send_message(client_socket, "Username already registered, please choose another: ")
+            else:
+                while True:
+                    self.send_message(client_socket, "Enter password: ")
+                    data = client_socket.recv(2048)
+                    pw = data.decode(ENCODE)
+                    self.send_message(client_socket, "Re-enter password: ")
+                    data = client_socket.recv(2048)
+                    pw2 = data.decode(ENCODE)
+                    if pw == pw2:
+                        self.db.insert_username_and_password(username, pw)
+                        self.send_message(client_socket, "Registration successful! Please login below...")
+                        return True
+                    else:
+                        self.send_message(client_socket, "Passwords do not match. Please try again...")
 
     def send_message(self, client_socket, msg):
         client_socket.send(msg.encode(ENCODE))

@@ -29,4 +29,12 @@ class Database:
         self.cursor.execute(find_user, [username, password])
         return self.cursor.fetchall()
 
+    def read_user_data(self, username):
+        self.cursor.execute("SELECT * FROM users")
+        rows = self.cursor.fetchall()
+        return rows
 
+    def insert_username_and_password(self, username, password):
+        add_user = "INSERT INTO users (username, password) VALUES (?,?)"
+        self.cursor.execute(add_user, (username, password))
+        self.commit()
