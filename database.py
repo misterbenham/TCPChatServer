@@ -19,17 +19,17 @@ class Database:
         self.execute(f"CREATE TABLE IF NOT EXISTS users (username TEXT, password TEXT)")
         self.commit()
 
-    def is_valid_username(self, username):
+    def find_username_in_db(self, username):
         find_user = "SELECT * FROM users WHERE username = ?"
         self.cursor.execute(find_user, [username])
         return self.cursor.fetchall()
 
-    def is_valid_password(self, username, password):
+    def find_user_pw_in_db(self, username, password):
         find_user = "SELECT * FROM users WHERE username = ? AND password = ?"
         self.cursor.execute(find_user, [username, password])
         return self.cursor.fetchall()
 
-    def read_user_data(self, username):
+    def fetch_all_users_data(self, username):
         self.cursor.execute("SELECT * FROM users")
         rows = self.cursor.fetchall()
         return rows

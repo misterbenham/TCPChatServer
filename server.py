@@ -97,11 +97,11 @@ class Server:
         while True:
             data = client_socket.recv(2048)
             username = data.decode(ENCODE)
-            if self.db.is_valid_username(username):
+            if self.db.find_username_in_db(username):
                 self.send_message(client_socket, "Enter password: ")
                 data = client_socket.recv(2048)
                 pw = data.decode(ENCODE)
-                if self.db.is_valid_password(username, pw):
+                if self.db.find_user_pw_in_db(username, pw):
                     self.send_message(client_socket, f"Credentials match. Welcome {username}!")
                     break
                 else:
@@ -114,7 +114,7 @@ class Server:
         while True:
             data = client_socket.recv(2048)
             username = data.decode(ENCODE)
-            if not self.db.read_user_data(username):
+            if not self.db.fetch_all_users_data(username):
                 self.send_message(client_socket, "Username already registered, please choose another: ")
             else:
                 while True:
