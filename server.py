@@ -72,23 +72,27 @@ class Server:
                 if message == "2":
                     if self.register(client_socket):
                         self.login(client_socket)
-                #
-                self.broadcast(message, client_socket)
-                logging.info(f" {client_socket.getpeername()}" + ": " + message)
-                if message == 'QUIT':
-                    index = self.clients.index(client_socket)
-                    self.clients.remove(index)
-                    client_socket.close()
-                    break
-                if not data:
-                    logging.info(f' [CONNECTION CLOSED] : {client_socket}')
-                    self.clients.remove(client_socket)
-                    break
             except socket.error as e:
                 logging.error(e)
                 break
         # connection closed
         client_socket.close()
+
+    def open_chat_room(self, client_socket):
+        while True:
+            data = client_socket.recv(2048)
+            message = data.decode(ENCODE)
+            self.broadcast(message, client_socket)
+            logging.info(f" {client_socket.getpeername()}" + ": " + message)
+            if message == 'QUIT':
+                index = self.clients.index(client_socket)
+                self.clients.remove(index)
+                client_socket.close()
+                break
+            if not data:
+                logging.info(f' [CONNECTION CLOSED] : {client_socket}')
+                self.clients.remove(client_socket)
+                break
 
     def login(self, client_socket):
         self.send_message(client_socket, "Enter username: ")
@@ -101,6 +105,7 @@ class Server:
                 pw = data.decode(ENCODE)
                 if self.db.find_user_pw_in_db(username, pw):
                     self.send_message(client_socket, f"Credentials match. Welcome {username}!")
+                    self.open_chat_room(client_socket)
                     break
                 else:
                     self.send_message(client_socket, "Incorrect credentials. Please enter username: ")
