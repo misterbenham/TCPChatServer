@@ -46,7 +46,10 @@ class Server:
             self.accept_connection(server_socket)
 
     def accept_connection(self, server_socket):
-        # Accept new connection
+        """
+        Accepts new client connections and spins up a thread for each new connection.
+        Appends client socket to list of clients[].
+        """
         try:
             client_socket, client_address = server_socket.accept()
             logging.info(f" Accepted a new connection from {client_socket.getpeername()}")
@@ -60,6 +63,7 @@ class Server:
     def handle_client_connection(self, client_socket):
         """
         Function to handle clients connections.
+        Receives data and asks client to either login (1) or register (2).
         """
         self.send_message(client_socket, "Welcome to the chat server! "
                                          "Press 1 to login or 2 to register: ")
@@ -70,12 +74,12 @@ class Server:
                 message = data.decode(ENCODE)
                 while True:
                     if message == "1":
-                        self.login(client_socket)
+                        if self.login(client_socket):
+                            self.open_chat_room(client_socket)
                     if message == "2":
                         if self.register(client_socket):
-                            self.login(client_socket)
-                            return True
-                    self.open_chat_room(client_socket)
+                            if self.login(client_socket):
+                                self.open_chat_room(client_socket)
             except socket.error as e:
                 logging.error(e)
                 break
@@ -83,6 +87,10 @@ class Server:
         client_socket.close()
 
     def open_chat_room(self, client_socket):
+        """
+        Open while loop constantly listening for data and broadcasting to all connected clients.
+        Runs only after client has logged in.
+        """
         while True:
             data = client_socket.recv(2048)
             message = data.decode(ENCODE)
@@ -99,6 +107,11 @@ class Server:
                 break
 
     def login(self, client_socket):
+        """
+        Asks user to enter username. Searches DB for username. If valid, requests password to login
+        and sends user to open_chat_room(). If username is invalid (not in DB), the user must
+        try again.
+        """
         self.send_message(client_socket, "Enter username: ")
         while True:
             data = client_socket.recv(2048)
@@ -109,13 +122,18 @@ class Server:
                 pw = data.decode(ENCODE)
                 if self.db.find_user_pw_in_db(username, pw):
                     self.send_message(client_socket, f"Credentials match. Welcome {username}!")
-                    return False
+                    return True
                 else:
                     self.send_message(client_socket, "Incorrect credentials. Please enter username: ")
             else:
                 self.send_message(client_socket, "Username not found. Please enter username: ")
 
     def register(self, client_socket):
+        """
+        Asks user for new username. Searches DB for username. If already exists, notifies the user that
+        they must use another. Asks for password twice. Checks passwords match. Creates user and adds
+        them to DB. Sends user to login with new credentials.
+        """
         self.send_message(client_socket, "Enter new username: ")
         while True:
             data = client_socket.recv(2048)
@@ -138,6 +156,9 @@ class Server:
                         self.send_message(client_socket, "Passwords do not match. Please try again...")
 
     def send_message(self, client_socket, msg):
+        """
+        Sends message (from server) to client socket.
+        """
         client_socket.send(msg.encode(ENCODE))
 
     def broadcast(self, message, sender):
