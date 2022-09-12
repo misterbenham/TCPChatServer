@@ -1,19 +1,13 @@
-import enum
 import logging
 import socket
 import threading
 
 import database
 import user
-
+import utility
 
 logging.basicConfig(format='%(levelname)s:%(message)s', level=logging.INFO)
 ENCODE = "utf-8"
-
-
-class LoginOption(enum.Enum):
-    LOGIN = '1'
-    REGISTER = '2'
 
 
 class Server:
@@ -79,10 +73,10 @@ class Server:
                 data = client_socket.recv(2048)
                 message = data.decode(ENCODE)
                 while True:
-                    if message == LoginOption.LOGIN.value:
+                    if message == utility.LoginOption.LOGIN.value:
                         if self.login(client_socket):
                             self.open_chat_room(client_socket)
-                    if message == LoginOption.REGISTER.value:
+                    if message == utility.LoginOption.REGISTER.value:
                         if self.register(client_socket):
                             if self.login(client_socket):
                                 self.open_chat_room(client_socket)
