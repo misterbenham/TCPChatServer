@@ -1,3 +1,4 @@
+import enum
 import logging
 import socket
 import threading
@@ -8,6 +9,11 @@ import user
 
 logging.basicConfig(format='%(levelname)s:%(message)s', level=logging.INFO)
 ENCODE = "utf-8"
+
+
+class LoginOption(enum.Enum):
+    LOGIN = 1
+    REGISTER = 2
 
 
 class Server:
@@ -54,6 +60,7 @@ class Server:
             client_socket, client_address = server_socket.accept()
             logging.info(f" Accepted a new connection from {client_socket.getpeername()}")
             self.clients.append(client_socket)
+            self.send_message(client_socket, "Welcome to the chat server!")
             client_thread = threading.Thread(target=self.handle_client_connection,
                                              args=(client_socket, ))
             client_thread.start()
@@ -65,21 +72,24 @@ class Server:
         Function to handle clients connections.
         Receives data and asks client to either login (1) or register (2).
         """
-        self.send_message(client_socket, "Welcome to the chat server! "
-                                         "Press 1 to login or 2 to register: ")
+        self.send_message(client_socket, "Press 1 to login or 2 to register: ")
         while True:
             # receive data from client
             try:
                 data = client_socket.recv(2048)
                 message = data.decode(ENCODE)
                 while True:
-                    if message == "1":
+                    if message == LoginOption.LOGIN:
                         if self.login(client_socket):
                             self.open_chat_room(client_socket)
-                    if message == "2":
+                    if message == LoginOption.REGISTER:
                         if self.register(client_socket):
                             if self.login(client_socket):
                                 self.open_chat_room(client_socket)
+                    else:
+                        self.send_message(client_socket, "Invalid input. Please try again...")
+                        self.send_message(client_socket, "Press 1 to login or 2 to register: ")
+                        break
             except socket.error as e:
                 logging.error(e)
                 break
