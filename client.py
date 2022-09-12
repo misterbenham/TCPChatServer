@@ -18,6 +18,10 @@ class Client:
         self.client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
     def run(self):
+        """
+        Connects client socket to server IP and port. Spins up thread for client_send
+        function and runs receive in a loop (listens for new messages from server).
+        """
         try:
             logging.debug(f" Trying to connect to {self.host} : {self.port}...")
             self.client_socket.connect((self.host, self.port))
@@ -36,6 +40,9 @@ class Client:
             logging.error(e)
 
     def client_send(self):
+        """
+        Message input allowing clients to enter and send messages through server to recipient.
+        """
         while True:
             try:
                 msg = input()
