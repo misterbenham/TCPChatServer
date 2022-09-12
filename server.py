@@ -1,3 +1,4 @@
+import hashlib
 import logging
 import socket
 import threading
@@ -123,8 +124,8 @@ class Server:
             if self.db.find_username_in_db(username):
                 self.send_message(client_socket, "Enter password: ")
                 data = client_socket.recv(2048)
-                pw = data.decode(ENCODE)
-                if self.db.find_user_pw_in_db(username, pw):
+                pw_encrypt = hashlib.sha256(data).hexdigest()
+                if self.db.find_user_pw_in_db(username, pw_encrypt):
                     self.send_message(client_socket, f"Credentials match. Welcome {username}!")
                     return True
                 else:
@@ -148,12 +149,12 @@ class Server:
                 while True:
                     self.send_message(client_socket, "Enter password: ")
                     data = client_socket.recv(2048)
-                    pw = data.decode(ENCODE)
+                    pw_encrypt = hashlib.sha256(data).hexdigest()
                     self.send_message(client_socket, "Re-enter password: ")
                     data = client_socket.recv(2048)
-                    pw2 = data.decode(ENCODE)
-                    if pw == pw2:
-                        self.db.insert_username_and_password(username, pw)
+                    pw_encrypt2 = hashlib.sha256(data).hexdigest()
+                    if pw_encrypt == pw_encrypt2:
+                        self.db.insert_username_and_password(username, pw_encrypt)
                         self.send_message(client_socket, "Registration successful! Please login below...")
                         return True
                     else:
