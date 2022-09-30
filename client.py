@@ -47,9 +47,12 @@ class Client:
                 # elif data["body"] == utility.Responses.ERROR.value:
                 #     logging.error("Error receiving message")
                 if data["header"] == utility.LoginCommands.LOGGED_IN.value:
-                    self.logged_in_menu()
+                    menu_thread = threading.Thread(target=self.logged_in_menu, args=(data, ))
+                    menu_thread.start()
+                    continue
                 elif data["header"] == utility.Responses.BROADCAST_MSG.value:
-                    print(data["body"])
+                    print(data["addressee"], data["body"])
+                    continue
             except socket.error as e:
                 logging.error(e)
                 self.client_socket.close()
@@ -78,56 +81,68 @@ class Client:
             logging.error(e)
 
     def welcome_menu(self):
-        user_input = input("What would you like to do? Type 'login' or 'register': ")
-        if user_input == utility.LoginCommands.LOGIN.value:
-            uname = input("Enter username: ")
-            pw = input("Enter password: ")
-            msg_input = self.build_message(utility.LoginCommands.LOGIN.value, uname, pw, None)
-            self.client_send(msg_input)
-        elif user_input == utility.LoginCommands.REGISTER.value:
-            uname = input("Enter new username: ")
-            pw = input("Enter new password: ")
-            pw2 = input("Re-enter password: ")
-            if pw != pw2:
-                logging.error("Passwords do not match. Please try again...")
-            else:
-                msg_input = self.build_message(utility.LoginCommands.REGISTER.value, uname, pw, None)
+        try:
+            user_input = input("What would you like to do? Type 'login' or 'register': ")
+            if user_input == utility.LoginCommands.LOGIN.value:
+                uname = input("Enter username: ")
+                pw = input("Enter password: ")
+                msg_input = self.build_message(utility.LoginCommands.LOGIN.value, uname, pw, None)
                 self.client_send(msg_input)
+                return uname
+            elif user_input == utility.LoginCommands.REGISTER.value:
+                uname = input("Enter new username: ")
+                pw = input("Enter new password: ")
+                pw2 = input("Re-enter password: ")
+                if pw != pw2:
+                    logging.error("Passwords do not match. Please try again...")
+                else:
+                    msg_input = self.build_message(utility.LoginCommands.REGISTER.value, uname, pw, None)
+                    self.client_send(msg_input)
+        except socket.error as e:
+            logging.error(e)
 
-    def logged_in_menu(self):
-        for retry in range(3):
-            user_input = input(f"Please select an option from the menu: \n"
-                               f"1: Broadcast \n"
-                               f"2: Direct Message \n"
-                               f"3: Help \n"
-                               f"4: Quit \n")
-            if user_input == utility.LoggedInCommands.BROADCAST.value:
-                self.broadcast_messages()
-            elif user_input == utility.LoggedInCommands.DIRECT_MESSAGE.value:
-                msg_input = self.build_message(utility.LoggedInCommands.DIRECT_MESSAGE.value, None, None, None)
-                self.client_send(msg_input)
-                break
-            elif user_input == utility.LoggedInCommands.HELP.value:
-                msg_input = self.build_message(utility.LoggedInCommands.HELP.value, None, None, None)
-                self.client_send(msg_input)
-                break
-            elif user_input == utility.LoggedInCommands.QUIT.value:
-                msg_input = self.build_message(utility.LoggedInCommands.QUIT.value, None, None, None)
-                self.client_send(msg_input)
-                break
+    def logged_in_menu(self, data):
+        try:
+            for retry in range(3):
+                user_input = input(f"Please select an option from the menu: \n"
+                                   f"1: Broadcast \n"
+                                   f"2: Direct Message \n"
+                                   f"3: Help \n"
+                                   f"4: Quit \n")
+                if user_input == utility.LoggedInCommands.BROADCAST.value:
+                    self.broadcast_messages(data)
+                    break
+                elif user_input == utility.LoggedInCommands.DIRECT_MESSAGE.value:
+                    msg_input = self.build_message(utility.LoggedInCommands.DIRECT_MESSAGE.value, None, None, None)
+                    self.client_send(msg_input)
+                    break
+                elif user_input == utility.LoggedInCommands.HELP.value:
+                    msg_input = self.build_message(utility.LoggedInCommands.HELP.value, None, None, None)
+                    self.client_send(msg_input)
+                    break
+                elif user_input == utility.LoggedInCommands.QUIT.value:
+                    msg_input = self.build_message(utility.LoggedInCommands.QUIT.value, None, None, None)
+                    self.client_send(msg_input)
+                    break
+                else:
+                    logging.error("Invalid selection- Please try again...")
             else:
-                logging.error("Invalid selection- Please try again...")
-        else:
-            logging.error("You keep making invalid choices...")
+                logging.error("You keep making invalid choices...")
+        except socket.error as e:
+            logging.error(e)
 
-    def broadcast_messages(self):
+    def broadcast_messages(self, data):
         while True:
             try:
                 # possible recv thread. Kill once broken out of while true.
-                msg_body = input("Message goes here: ")
-                msg_input = self.build_message(utility.LoggedInCommands.BROADCAST.value, None,
+                msg_body = input(">")
+                msg_input = self.build_message(utility.LoggedInCommands.BROADCAST.value, data["addressee"],
                                                msg_body, None)
-                self.client_send(msg_input)
+                if msg_body == "QUIT":
+                    break
+                else:
+                    self.client_send(msg_input)
+                    continue
             except socket.error as e:
                 logging.error(e)
 

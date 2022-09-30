@@ -79,25 +79,28 @@ class Server:
             try:
                 message = self.recv_message(client_socket)
                 data = json.loads(message)
-                while True:
-                    if data["header"] == utility.LoginCommands.LOGIN.value:
-                        self.login(client_socket, data)
+                if data["header"] == utility.LoginCommands.LOGIN.value:
+                    self.login(client_socket, data)
+                    continue
+                elif data["header"] == utility.LoginCommands.REGISTER.value:
+                    self.register(client_socket, data)
+                    continue
+                elif data["header"] == utility.LoggedInCommands.BROADCAST.value:
+                    if data["body"] == "QUIT":
+                        client_socket.close()
                         continue
-                    elif data["header"] == utility.LoginCommands.REGISTER.value:
-                        self.register(client_socket, data)
+                    else:
+                        print(data["addressee"] + " : " + data["body"])
+                        self.broadcast(client_socket, data)
                         continue
-                    elif data["header"] == utility.LoggedInCommands.BROADCAST.value:
-                        if data["body"] == "QUIT":
-                            client_socket.close()
-                        else:
-                            print(data["body"])
-                            self.broadcast(client_socket, data)
+                elif data["header"] == utility.LoggedInCommands.DIRECT_MESSAGE.value:
+                    continue
             except socket.error as e:
+                client_socket.close()
+                self.clients.remove(client_socket)
                 logging.error(e)
                 break
         # connection closed
-        client_socket.close()
-        self.clients.remove(client_socket)
 
     def login(self, client_socket, data):
         """
@@ -112,18 +115,19 @@ class Server:
                 if self.db.find_username_in_db(username):
                     pw_encrypt = hashlib.sha256(pw).hexdigest()
                     if self.db.find_user_pw_in_db(username, pw_encrypt):
-                        response = self.build_message(utility.LoginCommands.LOGGED_IN.value, None,
+                        response = self.build_message(utility.LoginCommands.LOGGED_IN.value, username,
                                                       utility.Responses.SUCCESS.value, None)
                         self.server_send(client_socket, response)
+                        break
                     else:
                         self.send_message(client_socket, "Incorrect credentials. Please enter username: ")
                 else:
                     self.send_message(client_socket, "Username not found. Please enter username: ")
             except socket.error as e:
+                self.clients.remove(client_socket)
+                client_socket.close()
                 logging.error(e)
                 break
-        client_socket.close()
-        self.clients.remove(client_socket)
 
     def register(self, client_socket, data):
         """
@@ -158,18 +162,16 @@ class Server:
         """
         try:
             data["header"] = None
-            data["extra_info"] = None
-            message = data["body"]
             username = data["addressee"]
-            user_msg = f"{client_socket.getpeername()}: " + message
-            response = self.build_message(utility.Responses.BROADCAST_MSG.value, None, user_msg, None)
-            data = None
+            user_msg = data["body"]
+            data["extra_info"] = None
+            response = self.build_message(utility.Responses.BROADCAST_MSG.value, username, user_msg, None)
             for client_socket in self.clients:
                 self.server_send(client_socket, response)
         except socket.error as e:
             logging.error(e)
-        client_socket.close()
-        self.clients.remove(client_socket)
+            client_socket.close()
+            self.clients.remove(client_socket)
 
     @staticmethod
     def build_message(header, addressee, body, extra_info):
