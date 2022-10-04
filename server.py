@@ -1,4 +1,6 @@
 import hashlib
+
+import bcrypt
 import json
 import logging
 import socket
@@ -10,6 +12,8 @@ import utility
 
 logging.basicConfig(format='%(levelname)s:%(message)s', level=logging.INFO)
 ENCODE = "utf-8"
+BUFFER_SIZE = 2048
+SALT = bcrypt.gensalt()
 
 
 class Server:
@@ -25,7 +29,7 @@ class Server:
         """
         Receives messages from client sockets.
         """
-        return client_socket.recv(2048).decode(ENCODE)
+        return client_socket.recv(BUFFER_SIZE).decode(ENCODE)
 
     def __init__(self, host: str, port: int):
         self.host = host
@@ -48,9 +52,9 @@ class Server:
         except socket.error as e:
             logging.error(e)
         logging.info(f" Server is listening on port {self.port}...")
-        server_socket.listen()
         self.db = database.Database()
         self.db.create_users_table()
+        server_socket.listen()
         while True:
             self.accept_connection(server_socket)
 
@@ -90,7 +94,7 @@ class Server:
                         client_socket.close()
                         continue
                     else:
-                        print(data["addressee"] + " : " + data["body"])
+                        print("{} : {}".format(data["addressee"], data["body"]))
                         self.broadcast(client_socket, data)
                         continue
                 elif data["header"] == utility.LoggedInCommands.DIRECT_MESSAGE.value:
@@ -140,7 +144,6 @@ class Server:
                 username = data["addressee"]
                 pw = data["body"].encode(ENCODE)
                 pw_encrypt = hashlib.sha256(pw).hexdigest()
-
                 if not self.db.fetch_all_users_data(username):
                     self.send_message(client_socket, "Username already registered, please choose another: ")
                 else:
@@ -197,5 +200,5 @@ class Server:
 
 
 if __name__ == '__main__':
-    server = Server('127.0.0.1', 5555)
+    server = Server('0.0.0.0', 5555)
     server.run()

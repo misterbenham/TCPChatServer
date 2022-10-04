@@ -9,6 +9,7 @@ import utility
 
 logging.basicConfig(format='%(levelname)s:%(message)s', level=logging.INFO)
 ENCODE = "utf-8"
+BUFFER_SIZE = 2048
 
 
 class Client:
@@ -63,7 +64,7 @@ class Client:
         """
         Receives messages from client sockets.
         """
-        return client_socket.recv(2048).decode(ENCODE)
+        return client_socket.recv(BUFFER_SIZE).decode(ENCODE)
 
     @staticmethod
     def build_message(header, addressee, body, extra_info):
