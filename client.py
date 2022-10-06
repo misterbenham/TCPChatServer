@@ -45,9 +45,14 @@ class Client:
                 data = json.loads(message)
                 # if data["body"] == utility.Responses.SUCCESS.value:
                 #     logging.info("Message received")
+                #     continue
                 # elif data["body"] == utility.Responses.ERROR.value:
                 #     logging.error("Error receiving message")
-                if data["header"] == utility.LoginCommands.LOGGED_IN.value:
+                #     continue
+                if data["header"] == utility.LoginCommands.REGISTERED.value:
+                    self.client_login()
+                    continue
+                elif data["header"] == utility.LoginCommands.LOGGED_IN.value:
                     menu_thread = threading.Thread(target=self.logged_in_menu, args=(data, ))
                     menu_thread.start()
                     continue
@@ -85,22 +90,28 @@ class Client:
         try:
             user_input = input("What would you like to do? Type 'login' or 'register': ")
             if user_input == utility.LoginCommands.LOGIN.value:
-                uname = input("Enter username: ")
-                pw = input("Enter password: ")
-                msg_input = self.build_message(utility.LoginCommands.LOGIN.value, uname, pw, None)
-                self.client_send(msg_input)
-                return uname
+                self.client_login()
             elif user_input == utility.LoginCommands.REGISTER.value:
-                uname = input("Enter new username: ")
-                pw = input("Enter new password: ")
-                pw2 = input("Re-enter password: ")
-                if pw != pw2:
-                    logging.error("Passwords do not match. Please try again...")
-                else:
-                    msg_input = self.build_message(utility.LoginCommands.REGISTER.value, uname, pw, None)
-                    self.client_send(msg_input)
+                self.client_register()
         except socket.error as e:
             logging.error(e)
+
+    def client_login(self):
+        uname = input("Enter username: ")
+        pw = input("Enter password: ")
+        msg_input = self.build_message(utility.LoginCommands.LOGIN.value, uname, pw, None)
+        self.client_send(msg_input)
+        return uname
+
+    def client_register(self):
+        uname = input("Enter new username: ")
+        pw = input("Enter new password: ")
+        pw2 = input("Re-enter password: ")
+        if pw != pw2:
+            logging.error("Passwords do not match. Please try again...")
+        else:
+            msg_input = self.build_message(utility.LoginCommands.REGISTER.value, uname, pw, None)
+            self.client_send(msg_input)
 
     def logged_in_menu(self, data):
         try:

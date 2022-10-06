@@ -13,7 +13,6 @@ import utility
 logging.basicConfig(format='%(levelname)s:%(message)s', level=logging.INFO)
 ENCODE = "utf-8"
 BUFFER_SIZE = 2048
-SALT = bcrypt.gensalt()
 
 
 class Server:
@@ -116,17 +115,17 @@ class Server:
             try:
                 username = data["addressee"]
                 pw = data["body"].encode(ENCODE)
-                if self.db.find_username_in_db(username):
-                    pw_encrypt = hashlib.sha256(pw).hexdigest()
-                    if self.db.find_user_pw_in_db(username, pw_encrypt):
+                user_in_db = self.db.find_username_in_db(username)
+                if not user_in_db:
+                    self.send_message(client_socket, "Username not found. Please enter username: ")
+                else:
+                    if bcrypt.checkpw(pw, self.db.find_username_in_db(username)[0][1]):
                         response = self.build_message(utility.LoginCommands.LOGGED_IN.value, username,
                                                       utility.Responses.SUCCESS.value, None)
                         self.server_send(client_socket, response)
                         break
                     else:
                         self.send_message(client_socket, "Incorrect credentials. Please enter username: ")
-                else:
-                    self.send_message(client_socket, "Username not found. Please enter username: ")
             except socket.error as e:
                 self.clients.remove(client_socket)
                 client_socket.close()
@@ -143,20 +142,21 @@ class Server:
             try:
                 username = data["addressee"]
                 pw = data["body"].encode(ENCODE)
-                pw_encrypt = hashlib.sha256(pw).hexdigest()
+                salt = bcrypt.gensalt()
+                hashed = bcrypt.hashpw(pw, salt)
                 if not self.db.fetch_all_users_data(username):
                     self.send_message(client_socket, "Username already registered, please choose another: ")
+                    continue
                 else:
-                    self.db.insert_username_and_password(username, pw_encrypt)
-                    self.send_message(client_socket, "Registration successful! Please login below...")
-                    response = self.build_message(None, None, None, None)
+                    self.db.insert_username_and_password(username, hashed)
+                    response = self.build_message(utility.LoginCommands.REGISTERED.value, None,
+                                                  None, None)
                     self.server_send(client_socket, response)
-                    self.login(client_socket, data)
             except socket.error as e:
                 logging.error(e)
-                break
-        client_socket.close()
-        self.clients.remove(client_socket)
+                client_socket.close()
+                self.clients.remove(client_socket)
+            break
 
     def broadcast(self, client_socket, data):
         """

@@ -4,6 +4,7 @@ import enum
 class LoginCommands(enum.Enum):
     LOGIN = 'login'
     REGISTER = 'register'
+    REGISTERED = 'registered'
     LOGGED_IN = 'logged_in'
 
 
