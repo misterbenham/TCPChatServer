@@ -115,11 +115,11 @@ class Server:
             try:
                 username = data["addressee"]
                 pw = data["body"].encode(ENCODE)
-                user_in_db = self.db.find_username_in_db(username)
+                user_in_db = self.db.find_username_in_db(username)[0][1]
                 if not user_in_db:
                     self.send_message(client_socket, "Username not found. Please enter username: ")
                 else:
-                    if bcrypt.checkpw(pw, self.db.find_username_in_db(username)[0][1]):
+                    if bcrypt.checkpw(pw, user_in_db):
                         response = self.build_message(utility.LoginCommands.LOGGED_IN.value, username,
                                                       utility.Responses.SUCCESS.value, None)
                         self.server_send(client_socket, response)
