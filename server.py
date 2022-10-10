@@ -115,11 +115,11 @@ class Server:
             try:
                 username = data["addressee"]
                 pw = data["body"].encode(ENCODE)
-                user_in_db = self.db.find_username_in_db(username)[0][1]
+                user_in_db = self.db.find_username_in_db(username)
                 if not user_in_db:
                     self.send_message(client_socket, "Username not found. Please enter username: ")
                 else:
-                    if bcrypt.checkpw(pw, user_in_db):
+                    if bcrypt.checkpw(pw, user_in_db[0][1]):
                         response = self.build_message(utility.LoginCommands.LOGGED_IN.value, username,
                                                       utility.Responses.SUCCESS.value, None)
                         self.server_send(client_socket, response)
@@ -141,16 +141,16 @@ class Server:
         while True:
             try:
                 username = data["addressee"]
-                pw = data["body"].encode(ENCODE)
-                salt = bcrypt.gensalt()
-                hashed = bcrypt.hashpw(pw, salt)
                 if not self.db.fetch_all_users_data(username):
                     self.send_message(client_socket, "Username already registered, please choose another: ")
                     continue
                 else:
+                    pw = data["body"].encode(ENCODE)
+                    salt = bcrypt.gensalt()
+                    hashed = bcrypt.hashpw(pw, salt)
                     self.db.insert_username_and_password(username, hashed)
                     response = self.build_message(utility.LoginCommands.REGISTERED.value, None,
-                                                  None, None)
+                                                  utility.Responses.SUCCESS.value, None)
                     self.server_send(client_socket, response)
             except socket.error as e:
                 logging.error(e)

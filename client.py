@@ -43,12 +43,6 @@ class Client:
             try:
                 message = self.recv_message(self.client_socket)
                 data = json.loads(message)
-                # if data["body"] == utility.Responses.SUCCESS.value:
-                #     logging.info("Message received")
-                #     continue
-                # elif data["body"] == utility.Responses.ERROR.value:
-                #     logging.error("Error receiving message")
-                #     continue
                 if data["header"] == utility.LoginCommands.REGISTERED.value:
                     self.client_login()
                     continue
@@ -58,6 +52,9 @@ class Client:
                     continue
                 elif data["header"] == utility.Responses.BROADCAST_MSG.value:
                     print(data["addressee"], data["body"])
+                    continue
+                elif data["header"] == utility.Responses.ERROR.value:
+                    print(data["body"])
                     continue
             except socket.error as e:
                 logging.error(e)
