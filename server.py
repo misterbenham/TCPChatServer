@@ -199,7 +199,6 @@ class Server:
         msg = data["body"]
         response = self.build_message(utility.LoggedInCommands.PRINT_DM.value, username, msg, None)
         client_socket = self.clients[username]
-        # for username, client_socket in self.clients.items():
         self.server_send(client_socket, response)
 
     @staticmethod

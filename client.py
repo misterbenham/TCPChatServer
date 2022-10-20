@@ -52,7 +52,7 @@ class Client:
                     menu_thread.start()
                     continue
                 elif data["header"] == utility.Responses.BROADCAST_MSG.value:
-                    print(data["addressee"], ":", data["body"])
+                    print(f"{data['addressee']} {':'} {data['body']}")
                     continue
                 elif data["header"] == utility.LoggedInCommands.DIRECT_MESSAGE.value:
                     self.direct_messages(data)
