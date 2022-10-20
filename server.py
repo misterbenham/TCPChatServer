@@ -33,7 +33,7 @@ class Server:
     def __init__(self, host: str, port: int):
         self.host = host
         self.port = port
-        self.clients = []
+        self.clients = {}
         self.db = None
 
     def run(self):
@@ -65,7 +65,6 @@ class Server:
         try:
             client_socket, client_address = server_socket.accept()
             logging.info(f" Accepted a new connection from {client_socket.getpeername()}")
-            self.clients.append(client_socket)
             client_thread = threading.Thread(target=self.handle_client_connection,
                                              args=(client_socket,))
             client_thread.start()
@@ -96,11 +95,18 @@ class Server:
                         print("{} : {}".format(data["addressee"], data["body"]))
                         self.broadcast(client_socket, data)
                         continue
-                elif data["header"] == utility.LoggedInCommands.DIRECT_MESSAGE.value:
+                elif data["header"] == utility.LoggedInCommands.AUTHENTICATE_DIRECT_MESSAGE.value:
+                    self.authenticate_direct_message(client_socket, data)
                     continue
+                elif data["header"] == utility.LoggedInCommands.DIRECT_MESSAGE.value:
+                    self.direct_message(client_socket, data)
+                    continue
+                elif data["header"] == utility.LoggedInCommands.QUIT.value:
+                    self.quit(client_socket, data)
+                    break
             except socket.error as e:
                 client_socket.close()
-                self.clients.remove(client_socket)
+                del self.clients
                 logging.error(e)
                 break
         # connection closed
@@ -120,6 +126,7 @@ class Server:
                     self.send_message(client_socket, "Username not found. Please enter username: ")
                 else:
                     if bcrypt.checkpw(pw, user_in_db[0][1]):
+                        self.clients[username] = client_socket
                         response = self.build_message(utility.LoginCommands.LOGGED_IN.value, username,
                                                       utility.Responses.SUCCESS.value, None)
                         self.server_send(client_socket, response)
@@ -127,7 +134,7 @@ class Server:
                     else:
                         self.send_message(client_socket, "Incorrect credentials. Please enter username: ")
             except socket.error as e:
-                self.clients.remove(client_socket)
+                del self.clients
                 client_socket.close()
                 logging.error(e)
                 break
@@ -155,7 +162,7 @@ class Server:
             except socket.error as e:
                 logging.error(e)
                 client_socket.close()
-                self.clients.remove(client_socket)
+                self.clients.pop(client_socket)
             break
 
     def broadcast(self, client_socket, data):
@@ -169,12 +176,31 @@ class Server:
             user_msg = data["body"]
             data["extra_info"] = None
             response = self.build_message(utility.Responses.BROADCAST_MSG.value, username, user_msg, None)
-            for client_socket in self.clients:
+            for username, client_socket in self.clients.items():
                 self.server_send(client_socket, response)
         except socket.error as e:
             logging.error(e)
             client_socket.close()
-            self.clients.remove(client_socket)
+            del self.clients[client_socket]
+
+    def authenticate_direct_message(self, client_socket, data):
+        if data["addressee"] not in self.clients:
+            response = self.build_message(utility.Responses.ERROR.value, None,
+                                          "Username not found", None)
+            self.server_send(client_socket, response)
+        else:
+            response = self.build_message(utility.LoggedInCommands.DIRECT_MESSAGE.value, data["addressee"],
+                                          None, None)
+            self.server_send(client_socket, response)
+
+    def direct_message(self, client_socket, data):
+        data["header"] = None
+        username = data["addressee"]
+        msg = data["body"]
+        response = self.build_message(utility.LoggedInCommands.PRINT_DM.value, username, msg, None)
+        client_socket = self.clients[username]
+        # for username, client_socket in self.clients.items():
+        self.server_send(client_socket, response)
 
     @staticmethod
     def build_message(header, addressee, body, extra_info):
@@ -188,6 +214,14 @@ class Server:
         try:
             msg_packet = json.dumps(msg_to_send)
             self.send_message(client_socket, msg_packet)
+        except socket.error as e:
+            logging.error(e)
+
+    def quit(self, client_socket, data):
+        try:
+            response = self.build_message(utility.LoggedInCommands.QUIT.value, None, None, None)
+            self.server_send(client_socket, response)
+            self.clients.pop(data["addressee"])
         except socket.error as e:
             logging.error(e)
 
