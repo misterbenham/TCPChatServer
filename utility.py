@@ -10,7 +10,9 @@ class LoginCommands(enum.Enum):
 
 class LoggedInCommands(enum.Enum):
     BROADCAST = 'broadcast'
-    DIRECT_MESSAGE = 'dm'
+    AUTHENTICATE_DIRECT_MESSAGE = 'dm'
+    DIRECT_MESSAGE = 'direct_message'
+    PRINT_DM = 'print_dm'
     HELP = 'help'
     QUIT = 'quit'
 

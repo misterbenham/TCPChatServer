@@ -1,6 +1,7 @@
 import json
 import logging
 import socket
+import sys
 import threading
 import time
 
@@ -51,11 +52,18 @@ class Client:
                     menu_thread.start()
                     continue
                 elif data["header"] == utility.Responses.BROADCAST_MSG.value:
-                    print(data["addressee"], data["body"])
+                    print(data["addressee"], ":", data["body"])
                     continue
+                elif data["header"] == utility.LoggedInCommands.DIRECT_MESSAGE.value:
+                    self.direct_messages(data)
+                    continue
+                elif data["header"] == utility.LoggedInCommands.PRINT_DM.value:
+                    print(data["addressee"], data["body"])
                 elif data["header"] == utility.Responses.ERROR.value:
                     print(data["body"])
                     continue
+                elif data["header"] == utility.LoggedInCommands.QUIT.value:
+                    sys.exit()
             except socket.error as e:
                 logging.error(e)
                 self.client_socket.close()
@@ -114,23 +122,23 @@ class Client:
         try:
             for retry in range(3):
                 user_input = input(f"Please select an option from the menu: \n"
-                                   f"1: Broadcast \n"
-                                   f"2: Direct Message \n"
-                                   f"3: Help \n"
-                                   f"4: Quit \n")
+                                   f"'broadcast' : Broadcast \n"
+                                   f"'dm': Direct Message \n"
+                                   f"'help': Help \n"
+                                   f"'quit' : Quit \n")
                 if user_input == utility.LoggedInCommands.BROADCAST.value:
                     self.broadcast_messages(data)
                     break
-                elif user_input == utility.LoggedInCommands.DIRECT_MESSAGE.value:
-                    msg_input = self.build_message(utility.LoggedInCommands.DIRECT_MESSAGE.value, None, None, None)
-                    self.client_send(msg_input)
+                elif user_input == utility.LoggedInCommands.AUTHENTICATE_DIRECT_MESSAGE.value:
+                    recipient = input("Who would you like to send a DM to?:\n")
+                    self.dm_recipient(recipient)
                     break
                 elif user_input == utility.LoggedInCommands.HELP.value:
                     msg_input = self.build_message(utility.LoggedInCommands.HELP.value, None, None, None)
                     self.client_send(msg_input)
                     break
                 elif user_input == utility.LoggedInCommands.QUIT.value:
-                    msg_input = self.build_message(utility.LoggedInCommands.QUIT.value, None, None, None)
+                    msg_input = self.build_message(utility.LoggedInCommands.QUIT.value, data["addressee"], None, None)
                     self.client_send(msg_input)
                     break
                 else:
@@ -143,7 +151,6 @@ class Client:
     def broadcast_messages(self, data):
         while True:
             try:
-                # possible recv thread. Kill once broken out of while true.
                 msg_body = input(">")
                 msg_input = self.build_message(utility.LoggedInCommands.BROADCAST.value, data["addressee"],
                                                msg_body, None)
@@ -152,6 +159,24 @@ class Client:
                 else:
                     self.client_send(msg_input)
                     continue
+            except socket.error as e:
+                logging.error(e)
+
+    def dm_recipient(self, recipient):
+        try:
+            msg_input = self.build_message(utility.LoggedInCommands.AUTHENTICATE_DIRECT_MESSAGE.value, recipient,
+                                           None, None)
+            self.client_send(msg_input)
+        except socket.error as e:
+            logging.error(e)
+
+    def direct_messages(self, data):
+        while True:
+            try:
+                msg_body = input(">")
+                msg_input = self.build_message(utility.LoggedInCommands.DIRECT_MESSAGE.value, data["addressee"],
+                                               msg_body, None)
+                self.client_send(msg_input)
             except socket.error as e:
                 logging.error(e)
 

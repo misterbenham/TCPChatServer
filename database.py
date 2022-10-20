@@ -16,8 +16,12 @@ class Database:
         self.connection.commit()
 
     def create_users_table(self):
-        self.execute(f"CREATE TABLE IF NOT EXISTS users (username TEXT, password TEXT)")
+        self.execute(f"CREATE TABLE IF NOT EXISTS users (username TEXT, "
+                     f"password TEXT, PRIMARY KEY (username))")
         self.commit()
+
+    def create_friends_table(self):
+        self.execute(f"CREATE TABLE IF NOT EXISTS friends ()")
 
     def find_username_in_db(self, username):
         find_user = "SELECT * FROM users WHERE username = ?"
