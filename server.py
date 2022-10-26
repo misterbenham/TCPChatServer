@@ -53,6 +53,7 @@ class Server:
         logging.info(f" Server is listening on port {self.port}...")
         self.db = database.Database()
         self.db.create_users_table()
+        self.db.create_friends_table()
         server_socket.listen()
         while True:
             self.accept_connection(server_socket)
@@ -101,6 +102,15 @@ class Server:
                 elif data["header"] == utility.LoggedInCommands.DIRECT_MESSAGE.value:
                     self.direct_message(client_socket, data)
                     continue
+                elif data["header"] == utility.LoggedInCommands.ADD_FRIEND.value:
+                    self.friend_request(client_socket, data)
+                    continue
+                elif data["header"] == utility.LoggedInCommands.VIEW_FRIEND_REQUESTS.value:
+                    self.view_friend_requests(client_socket, data)
+                    continue
+                elif data["header"] == utility.LoggedInCommands.VIEW_FRIENDS.value:
+                    self.view_friends(client_socket, data)
+                    continue
                 elif data["header"] == utility.LoggedInCommands.QUIT.value:
                     self.quit(client_socket, data)
                     break
@@ -109,7 +119,6 @@ class Server:
                 del self.clients
                 logging.error(e)
                 break
-        # connection closed
 
     def login(self, client_socket, data):
         """
@@ -125,7 +134,7 @@ class Server:
                 if not user_in_db:
                     self.send_message(client_socket, "Username not found. Please enter username: ")
                 else:
-                    if bcrypt.checkpw(pw, user_in_db[0][1]):
+                    if bcrypt.checkpw(pw, user_in_db[0][2]):
                         self.clients[username] = client_socket
                         response = self.build_message(utility.LoginCommands.LOGGED_IN.value, username,
                                                       utility.Responses.SUCCESS.value, None)
@@ -149,8 +158,10 @@ class Server:
             try:
                 username = data["addressee"]
                 if not self.db.fetch_all_users_data(username):
-                    self.send_message(client_socket, "Username already registered, please choose another: ")
-                    continue
+                    response = self.build_message(utility.LoginCommands.REGISTER.value, username,
+                                                  "Username already registered, please choose another...", None)
+                    self.server_send(client_socket, response)
+                    break
                 else:
                     pw = data["body"].encode(ENCODE)
                     salt = bcrypt.gensalt()
@@ -199,6 +210,34 @@ class Server:
         msg = data["body"]
         response = self.build_message(utility.LoggedInCommands.PRINT_DM.value, username, msg, None)
         client_socket = self.clients[username]
+        self.server_send(client_socket, response)
+
+    def friend_request(self, client_socket, data):
+        requester = data["addressee"]
+        recipient = data["body"]
+        if not self.db.fetch_all_users_data(recipient):
+            response = self.build_message(utility.Responses.ERROR.value, None, "Username not found...", None)
+            self.server_send(client_socket, response)
+        elif self.db.find_friendship_status(requester, recipient) == "SENT":
+            self.db.insert_friend_relationship(requester, recipient)
+            response = self.build_message(utility.Responses.SUCCESS.value, None, "Friend added", None)
+            self.server_send(client_socket, response)
+        else:
+            self.db.update_to_friends(requester, recipient)
+            response = self.build_message(utility.Responses.SUCCESS.value, None,
+                                          "Friend request sent", None)
+            self.server_send(client_socket, response)
+
+    def view_friend_requests(self, client_socket, data):
+        requester = data["addressee"]
+        friends_list = self.db.view_friend_requests(requester)
+        response = self.build_message(utility.Responses.PRINT_FRIEND_REQUESTS.value, requester, friends_list, None)
+        self.server_send(client_socket, response)
+
+    def view_friends(self, client_socket, data):
+        requester = data["addressee"]
+        friends_list = self.db.view_friends(requester)
+        response = self.build_message(utility.Responses.PRINT_FRIENDS_LIST.value, requester, friends_list, None)
         self.server_send(client_socket, response)
 
     @staticmethod

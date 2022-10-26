@@ -44,7 +44,11 @@ class Client:
             try:
                 message = self.recv_message(self.client_socket)
                 data = json.loads(message)
-                if data["header"] == utility.LoginCommands.REGISTERED.value:
+                if data["header"] == utility.LoginCommands.REGISTER.value:
+                    print(data["body"])
+                    self.client_register()
+                    continue
+                elif data["header"] == utility.LoginCommands.REGISTERED.value:
                     self.client_login()
                     continue
                 elif data["header"] == utility.LoginCommands.LOGGED_IN.value:
@@ -59,6 +63,16 @@ class Client:
                     continue
                 elif data["header"] == utility.LoggedInCommands.PRINT_DM.value:
                     print(data["addressee"], data["body"])
+                    continue
+                elif data["header"] == utility.Responses.PRINT_FRIEND_REQUESTS.value:
+                    print(data["body"])
+                    continue
+                elif data["header"] == utility.Responses.PRINT_FRIENDS_LIST.value:
+                    print(data["body"])
+                    continue
+                elif data["header"] == utility.Responses.SUCCESS.value:
+                    print(data["body"])
+                    continue
                 elif data["header"] == utility.Responses.ERROR.value:
                     print(data["body"])
                     continue
@@ -124,6 +138,9 @@ class Client:
                 user_input = input(f"Please select an option from the menu: \n"
                                    f"'broadcast' : Broadcast \n"
                                    f"'dm': Direct Message \n"
+                                   f"'af': Add Friend \n"
+                                   f"'fr': View Friend Requests \n"
+                                   f"'vf': View Friends \n"
                                    f"'help': Help \n"
                                    f"'quit' : Quit \n")
                 if user_input == utility.LoggedInCommands.BROADCAST.value:
@@ -132,6 +149,20 @@ class Client:
                 elif user_input == utility.LoggedInCommands.AUTHENTICATE_DIRECT_MESSAGE.value:
                     recipient = input("Who would you like to send a DM to?:\n")
                     self.dm_recipient(recipient)
+                    break
+                elif user_input == utility.LoggedInCommands.ADD_FRIEND.value:
+                    recipient = input("Type the username of the friend to add:\n")
+                    self.add_friend(data, recipient)
+                    break
+                elif user_input == utility.LoggedInCommands.VIEW_FRIEND_REQUESTS.value:
+                    msg_input = self.build_message(utility.LoggedInCommands.VIEW_FRIEND_REQUESTS.value,
+                                                   data["addressee"], None, None)
+                    self.client_send(msg_input)
+                    break
+                elif user_input == utility.LoggedInCommands.VIEW_FRIENDS.value:
+                    msg_input = self.build_message(utility.LoggedInCommands.VIEW_FRIENDS.value, data["addressee"],
+                                                   None, None)
+                    self.client_send(msg_input)
                     break
                 elif user_input == utility.LoggedInCommands.HELP.value:
                     msg_input = self.build_message(utility.LoggedInCommands.HELP.value, None, None, None)
@@ -179,6 +210,11 @@ class Client:
                 self.client_send(msg_input)
             except socket.error as e:
                 logging.error(e)
+
+    def add_friend(self, data, recipient):
+        msg_input = self.build_message(utility.LoggedInCommands.ADD_FRIEND.value, data["addressee"],
+                                       recipient, None)
+        self.client_send(msg_input)
 
 
 if __name__ == '__main__':
