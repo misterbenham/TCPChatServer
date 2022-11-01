@@ -223,7 +223,7 @@ class Server:
             response = self.build_message(utility.Responses.SUCCESS.value, None, "Friend added", None)
             self.server_send(client_socket, response)
         else:
-            self.db.update_to_friends(requester, recipient)
+            self.db.insert_friend_request(requester, recipient)
             response = self.build_message(utility.Responses.SUCCESS.value, None,
                                           "Friend request sent", None)
             self.server_send(client_socket, response)

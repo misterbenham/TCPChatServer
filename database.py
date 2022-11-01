@@ -41,34 +41,36 @@ class Database:
         return rows
 
     def find_user_id(self, user):
-        find_user_id = f"SELECT user_id FROM users WHERE username = '{user}'"
-        self.cursor.execute(find_user_id)
+        find_user_id = f"SELECT user_id FROM users WHERE username = ?"
+        self.cursor.execute(find_user_id, [user])
         return self.cursor.fetchone()[0]
 
     def find_user_name(self, id):
-        find_user_name = f"SELECT username FROM users WHERE user_id = '{id}'"
-        self.cursor.execute(find_user_name)
+        find_user_name = f"SELECT username FROM users WHERE user_id = ?"
+        self.cursor.execute(find_user_name, [id])
         return self.cursor.fetchone()[0]
 
     def find_friendship_status(self, requester, recipient):
         receiver = self.find_user_id(requester)
         sender = self.find_user_id(recipient)
-        find_status = f"SELECT status FROM friends WHERE sender = {sender} AND receiver = {receiver}"
-        self.cursor.execute(find_status)
-        retval = self.cursor.fetchone()[0]
-        print (retval)
-        return retval
+        find_status = f"SELECT status FROM friends WHERE sender = ? AND receiver = ?"
+        self.cursor.execute(find_status, [sender, receiver])
+        retval = self.cursor.fetchone()
+        if retval:
+            return retval[0]
+        else:
+            return None
 
     def insert_friend_relationship(self, requester, recipient):
         if self.find_friendship_status(requester, recipient) == "SENT":
             receiver = self.find_user_id(requester)
             sender = self.find_user_id(recipient)
             friends_accepted = f"UPDATE friends SET status = 'FRIENDS' WHERE sender = " \
-                               f"{sender} AND receiver = {receiver}"
-            self.cursor.execute(friends_accepted)
+                               f"? AND receiver = ?"
+            self.cursor.execute(friends_accepted, [sender, receiver])
             self.commit()
 
-    def update_to_friends(self, requester, recipient):
+    def insert_friend_request(self, requester, recipient):
         sender = self.find_user_id(requester)
         receiver = self.find_user_id(recipient)
         add_relationship = f"INSERT INTO friends (sender, receiver, status) VALUES (?, ?, ?)"
@@ -81,18 +83,20 @@ class Database:
         self.commit()
 
     def view_friend_requests(self, user):
-        id = self.find_user_id(user)
-        find_request_status = f"SELECT sender FROM friends WHERE receiver = '{id}' AND status = 'SENT'"
-        self.cursor.execute(find_request_status)
-        user_ids = self.cursor.fetchall()
-        friend_requests = [self.find_user_name(x[0]) for x in user_ids]
+        find_request_status = f"SELECT username FROM users INNER JOIN friends ON users.user_id=friends.sender WHERE" \
+                              f" friends.status='SENT' AND friends.receiver=" \
+                              f"(SELECT user_id FROM users" \
+                              f" WHERE username = ?)"
+        self.cursor.execute(find_request_status, [user, ])
+        friend_requests = self.cursor.fetchall()
         return friend_requests
 
     def view_friends(self, user):
-        id = self.find_user_id(user)
-        find_friends = f"SELECT sender FROM friends WHERE receiver = '{id}' AND status = 'FRIENDS' " \
-                       f"UNION ALL SELECT receiver FROM friends WHERE sender = '{id}' AND status = 'FRIENDS'"
-        self.cursor.execute(find_friends)
+        find_friends = f"SELECT username FROM users INNER JOIN friends ON users.user_id=friends.sender WHERE" \
+                       f" friends.status='FRIENDS' AND friends.receiver = " \
+                       f"(SELECT user_id FROM users WHERE username = ?) UNION ALL" \
+                       f" SELECT username FROM users INNER JOIN friends ON users.user_id=friends.receiver WHERE" \
+                       f" friends.status='FRIENDS' AND friends.sender = (SELECT user_id FROM users WHERE username = ?)"
+        self.cursor.execute(find_friends, [user, user])
         friend_ids = self.cursor.fetchall()
-        friends = [self.find_user_name(x[0]) for x in friend_ids]
-        return friends
+        return friend_ids
