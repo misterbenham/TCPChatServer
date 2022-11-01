@@ -111,6 +111,9 @@ class Server:
                 elif data["header"] == utility.LoggedInCommands.VIEW_FRIENDS.value:
                     self.view_friends(client_socket, data)
                     continue
+                elif data["header"] == utility.LoggedInCommands.SET_STATUS_AWAY.value:
+                    self.set_status_away(client_socket, data)
+                    continue
                 elif data["header"] == utility.LoggedInCommands.QUIT.value:
                     self.quit(client_socket, data)
                     break
@@ -136,6 +139,7 @@ class Server:
                 else:
                     if bcrypt.checkpw(pw, user_in_db[0][2]):
                         self.clients[username] = client_socket
+                        self.db.set_status_online(username)
                         response = self.build_message(utility.LoginCommands.LOGGED_IN.value, username,
                                                       utility.Responses.SUCCESS.value, None)
                         self.server_send(client_socket, response)
@@ -240,6 +244,12 @@ class Server:
         response = self.build_message(utility.Responses.PRINT_FRIENDS_LIST.value, requester, friends_list, None)
         self.server_send(client_socket, response)
 
+    def set_status_away(self, client_socket, data):
+        username = data["addressee"]
+        self.db.set_status_away(username)
+        response = self.build_message(utility.Responses.PRINT_STATUS_AWAY.value, username, "Status: AWAY", None)
+        self.server_send(client_socket, response)
+
     @staticmethod
     def build_message(header, addressee, body, extra_info):
         x = {"header": header,
@@ -257,9 +267,11 @@ class Server:
 
     def quit(self, client_socket, data):
         try:
+            username = data["addressee"]
+            self.db.set_status_offline(username)
             response = self.build_message(utility.LoggedInCommands.QUIT.value, None, None, None)
             self.server_send(client_socket, response)
-            self.clients.pop(data["addressee"])
+            self.clients.pop(username)
         except socket.error as e:
             logging.error(e)
 

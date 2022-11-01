@@ -16,6 +16,7 @@ class LoggedInCommands(enum.Enum):
     ADD_FRIEND = 'af'
     VIEW_FRIEND_REQUESTS = 'fr'
     VIEW_FRIENDS = 'vf'
+    SET_STATUS_AWAY = 'ssa'
     HELP = 'help'
     QUIT = 'quit'
 
@@ -26,3 +27,4 @@ class Responses(enum.Enum):
     BROADCAST_MSG = 'broadcast_msg'
     PRINT_FRIEND_REQUESTS = 'pfr'
     PRINT_FRIENDS_LIST = 'pfl'
+    PRINT_STATUS_AWAY = 'ssa'
