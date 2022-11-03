@@ -170,7 +170,7 @@ class Client:
                     break
                 elif user_input == utility.LoggedInCommands.SET_STATUS_AWAY.value:
                     msg_input = self.build_message(utility.LoggedInCommands.SET_STATUS_AWAY.value, data["addressee"],
-                                                   None, None)
+                                                   "AWAY", None)
                     self.client_send(msg_input)
                     break
                 elif user_input == utility.LoggedInCommands.HELP.value:
@@ -178,7 +178,8 @@ class Client:
                     self.client_send(msg_input)
                     break
                 elif user_input == utility.LoggedInCommands.QUIT.value:
-                    msg_input = self.build_message(utility.LoggedInCommands.QUIT.value, data["addressee"], None, None)
+                    msg_input = self.build_message(utility.LoggedInCommands.QUIT.value, data["addressee"],
+                                                   None, "OFFLINE")
                     self.client_send(msg_input)
                     break
                 else:

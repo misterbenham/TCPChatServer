@@ -112,7 +112,7 @@ class Server:
                     self.view_friends(client_socket, data)
                     continue
                 elif data["header"] == utility.LoggedInCommands.SET_STATUS_AWAY.value:
-                    self.set_status_away(client_socket, data)
+                    self.set_status(client_socket, data)
                     continue
                 elif data["header"] == utility.LoggedInCommands.QUIT.value:
                     self.quit(client_socket, data)
@@ -139,7 +139,7 @@ class Server:
                 else:
                     if bcrypt.checkpw(pw, user_in_db[0][2]):
                         self.clients[username] = client_socket
-                        self.db.set_status_online(username)
+                        self.db.set_status("ONLINE", username)
                         response = self.build_message(utility.LoginCommands.LOGGED_IN.value, username,
                                                       utility.Responses.SUCCESS.value, None)
                         self.server_send(client_socket, response)
@@ -244,9 +244,10 @@ class Server:
         response = self.build_message(utility.Responses.PRINT_FRIENDS_LIST.value, requester, friends_list, None)
         self.server_send(client_socket, response)
 
-    def set_status_away(self, client_socket, data):
+    def set_status(self, client_socket, data):
         username = data["addressee"]
-        self.db.set_status_away(username)
+        status = data["body"]
+        self.db.set_status(status, username)
         response = self.build_message(utility.Responses.PRINT_STATUS_AWAY.value, username, "Status: AWAY", None)
         self.server_send(client_socket, response)
 
@@ -268,7 +269,8 @@ class Server:
     def quit(self, client_socket, data):
         try:
             username = data["addressee"]
-            self.db.set_status_offline(username)
+            status = "OFFLINE"
+            self.db.set_status(status, username)
             response = self.build_message(utility.LoggedInCommands.QUIT.value, None, None, None)
             self.server_send(client_socket, response)
             self.clients.pop(username)

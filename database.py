@@ -82,19 +82,9 @@ class Database:
         self.cursor.execute(add_user, (username, password, 'OFFLINE'))
         self.commit()
 
-    def set_status_away(self, user):
-        status_away = f"UPDATE users SET user_status = 'AWAY' WHERE username = ?"
-        self.cursor.execute(status_away, [user, ])
-        self.commit()
-
-    def set_status_online(self, user):
-        status_online = f"UPDATE users SET user_status = 'ONLINE' WHERE username = ?"
-        self.cursor.execute(status_online, [user, ])
-        self.commit()
-
-    def set_status_offline(self, user):
-        status_offline = f"UPDATE users SET user_status = 'OFFLINE' WHERE username = ?"
-        self.cursor.execute(status_offline, [user, ])
+    def set_status(self, status, user):
+        set_status = f"UPDATE users SET user_status = ? WHERE username = ?"
+        self.cursor.execute(set_status, [status, user])
         self.commit()
 
     def view_friend_requests(self, user):
