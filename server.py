@@ -235,13 +235,15 @@ class Server:
     def view_friend_requests(self, client_socket, data):
         requester = data["addressee"]
         friends_list = self.db.view_friend_requests(requester)
-        response = self.build_message(utility.Responses.PRINT_FRIEND_REQUESTS.value, requester, friends_list, None)
+        response = self.build_message(utility.Responses.PRINT_FRIEND_REQUESTS.value, requester,
+                                      " | ".join([x[0] for x in friends_list]), None)
         self.server_send(client_socket, response)
 
     def view_friends(self, client_socket, data):
         requester = data["addressee"]
         friends_list = self.db.view_friends(requester)
-        response = self.build_message(utility.Responses.PRINT_FRIENDS_LIST.value, requester, friends_list, None)
+        response = self.build_message(utility.Responses.PRINT_FRIENDS_LIST.value, requester,
+                                      " | ".join([x[0] for x in friends_list]), None)
         self.server_send(client_socket, response)
 
     def set_status(self, client_socket, data):
