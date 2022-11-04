@@ -70,6 +70,9 @@ class Client:
                 elif data["header"] == utility.Responses.PRINT_FRIENDS_LIST.value:
                     print(data["body"])
                     continue
+                elif data["header"] == utility.Responses.PRINT_STATUS_AWAY.value:
+                    print(data["body"])
+                    continue
                 elif data["header"] == utility.Responses.SUCCESS.value:
                     print(data["body"])
                     continue
@@ -141,6 +144,7 @@ class Client:
                                    f"'af': Add Friend \n"
                                    f"'fr': View Friend Requests \n"
                                    f"'vf': View Friends \n"
+                                   f"'ssa' : Set Status Away \n"
                                    f"'help': Help \n"
                                    f"'quit' : Quit \n")
                 if user_input == utility.LoggedInCommands.BROADCAST.value:
@@ -164,12 +168,18 @@ class Client:
                                                    None, None)
                     self.client_send(msg_input)
                     break
+                elif user_input == utility.LoggedInCommands.SET_STATUS_AWAY.value:
+                    msg_input = self.build_message(utility.LoggedInCommands.SET_STATUS_AWAY.value, data["addressee"],
+                                                   "AWAY", None)
+                    self.client_send(msg_input)
+                    break
                 elif user_input == utility.LoggedInCommands.HELP.value:
                     msg_input = self.build_message(utility.LoggedInCommands.HELP.value, None, None, None)
                     self.client_send(msg_input)
                     break
                 elif user_input == utility.LoggedInCommands.QUIT.value:
-                    msg_input = self.build_message(utility.LoggedInCommands.QUIT.value, data["addressee"], None, None)
+                    msg_input = self.build_message(utility.LoggedInCommands.QUIT.value, data["addressee"],
+                                                   None, "OFFLINE")
                     self.client_send(msg_input)
                     break
                 else:

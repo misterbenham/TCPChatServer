@@ -111,6 +111,9 @@ class Server:
                 elif data["header"] == utility.LoggedInCommands.VIEW_FRIENDS.value:
                     self.view_friends(client_socket, data)
                     continue
+                elif data["header"] == utility.LoggedInCommands.SET_STATUS_AWAY.value:
+                    self.set_status(client_socket, data)
+                    continue
                 elif data["header"] == utility.LoggedInCommands.QUIT.value:
                     self.quit(client_socket, data)
                     break
@@ -136,6 +139,7 @@ class Server:
                 else:
                     if bcrypt.checkpw(pw, user_in_db[0][2]):
                         self.clients[username] = client_socket
+                        self.db.set_status("ONLINE", username)
                         response = self.build_message(utility.LoginCommands.LOGGED_IN.value, username,
                                                       utility.Responses.SUCCESS.value, None)
                         self.server_send(client_socket, response)
@@ -231,13 +235,22 @@ class Server:
     def view_friend_requests(self, client_socket, data):
         requester = data["addressee"]
         friends_list = self.db.view_friend_requests(requester)
-        response = self.build_message(utility.Responses.PRINT_FRIEND_REQUESTS.value, requester, friends_list, None)
+        response = self.build_message(utility.Responses.PRINT_FRIEND_REQUESTS.value, requester,
+                                      " | ".join([x[0] for x in friends_list]), None)
         self.server_send(client_socket, response)
 
     def view_friends(self, client_socket, data):
         requester = data["addressee"]
         friends_list = self.db.view_friends(requester)
-        response = self.build_message(utility.Responses.PRINT_FRIENDS_LIST.value, requester, friends_list, None)
+        response = self.build_message(utility.Responses.PRINT_FRIENDS_LIST.value, requester,
+                                      " | ".join([x[0] for x in friends_list]), None)
+        self.server_send(client_socket, response)
+
+    def set_status(self, client_socket, data):
+        username = data["addressee"]
+        status = data["body"]
+        self.db.set_status(status, username)
+        response = self.build_message(utility.Responses.PRINT_STATUS_AWAY.value, username, "Status: AWAY", None)
         self.server_send(client_socket, response)
 
     @staticmethod
@@ -257,9 +270,12 @@ class Server:
 
     def quit(self, client_socket, data):
         try:
+            username = data["addressee"]
+            status = "OFFLINE"
+            self.db.set_status(status, username)
             response = self.build_message(utility.LoggedInCommands.QUIT.value, None, None, None)
             self.server_send(client_socket, response)
-            self.clients.pop(data["addressee"])
+            self.clients.pop(username)
         except socket.error as e:
             logging.error(e)
 

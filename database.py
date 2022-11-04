@@ -17,7 +17,7 @@ class Database:
 
     def create_users_table(self):
         self.execute(f"CREATE TABLE IF NOT EXISTS users (user_id INTEGER PRIMARY KEY, "
-                     f"username TEXT, password TEXT)")
+                     f"username TEXT, password TEXT, user_status TEXT)")
         self.commit()
 
     def create_friends_table(self):
@@ -78,8 +78,13 @@ class Database:
         self.commit()
 
     def insert_username_and_password(self, username, password):
-        add_user = f"INSERT INTO users (username, password) VALUES (?, ?)"
-        self.cursor.execute(add_user, (username, password))
+        add_user = f"INSERT INTO users (username, password, user_status) VALUES (?, ?, ?)"
+        self.cursor.execute(add_user, (username, password, 'OFFLINE'))
+        self.commit()
+
+    def set_status(self, status, user):
+        set_status = f"UPDATE users SET user_status = ? WHERE username = ?"
+        self.cursor.execute(set_status, [status, user])
         self.commit()
 
     def view_friend_requests(self, user):
