@@ -97,11 +97,13 @@ class Database:
         return friend_requests
 
     def view_friends(self, user):
-        find_friends = f"SELECT username FROM users INNER JOIN friends ON users.user_id=friends.sender WHERE" \
+        find_friends = f"SELECT username, user_status FROM users INNER JOIN friends" \
+                       f" ON users.user_id=friends.sender WHERE" \
                        f" friends.status='FRIENDS' AND friends.receiver = " \
                        f"(SELECT user_id FROM users WHERE username = ?) UNION ALL" \
-                       f" SELECT username FROM users INNER JOIN friends ON users.user_id=friends.receiver WHERE" \
+                       f" SELECT username, user_status FROM users INNER JOIN friends ON" \
+                       f" users.user_id=friends.receiver WHERE" \
                        f" friends.status='FRIENDS' AND friends.sender = (SELECT user_id FROM users WHERE username = ?)"
         self.cursor.execute(find_friends, [user, user])
-        friend_ids = self.cursor.fetchall()
-        return friend_ids
+        friend_list = self.cursor.fetchall()
+        return friend_list
