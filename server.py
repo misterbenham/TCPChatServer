@@ -119,7 +119,6 @@ class Server:
                     break
             except socket.error as e:
                 client_socket.close()
-                del self.clients
                 logging.error(e)
                 break
 
@@ -143,11 +142,18 @@ class Server:
                         response = self.build_message(utility.LoginCommands.LOGGED_IN.value, username,
                                                       utility.Responses.SUCCESS.value, None)
                         self.server_send(client_socket, response)
+
+                        friends_list = self.db.view_friends(username)
+                        print(friends_list)
+                        online_notification = self.build_message(utility.Responses.ONLINE_NOTIFICATION.value,
+                                                                 username, None, None)
+                        for username, client_socket in self.clients.items():
+                            if username in friends_list:
+                                self.server_send(client_socket, online_notification)
                         break
                     else:
                         self.send_message(client_socket, "Incorrect credentials. Please enter username: ")
             except socket.error as e:
-                del self.clients
                 client_socket.close()
                 logging.error(e)
                 break
@@ -241,7 +247,7 @@ class Server:
 
     def view_friends(self, client_socket, data):
         requester = data["addressee"]
-        friends_list = self.db.view_friends(requester)
+        friends_list = self.db.view_friends_and_status(requester)
         response = self.build_message(utility.Responses.PRINT_FRIENDS_LIST.value, requester,
                                       "\n".join([x[0] + " : " + x[1] for x in friends_list]), None)
         self.server_send(client_socket, response)

@@ -28,3 +28,4 @@ class Responses(enum.Enum):
     PRINT_FRIEND_REQUESTS = 'pfr'
     PRINT_FRIENDS_LIST = 'pfl'
     PRINT_STATUS_AWAY = 'ssa'
+    ONLINE_NOTIFICATION = 'of'

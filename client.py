@@ -73,6 +73,9 @@ class Client:
                 elif data["header"] == utility.Responses.PRINT_STATUS_AWAY.value:
                     print(data["body"])
                     continue
+                elif data["header"] == utility.Responses.ONLINE_NOTIFICATION.value:
+                    print(f'{data["addressee"]} { "is ONLINE!"}')
+                    continue
                 elif data["header"] == utility.Responses.SUCCESS.value:
                     print(data["body"])
                     continue
@@ -111,9 +114,9 @@ class Client:
     def welcome_menu(self):
         try:
             user_input = input("What would you like to do? Type 'login' or 'register': ")
-            if user_input == utility.LoginCommands.LOGIN.value:
+            if user_input.lower() == utility.LoginCommands.LOGIN.value:
                 self.client_login()
-            elif user_input == utility.LoginCommands.REGISTER.value:
+            elif user_input.lower() == utility.LoginCommands.REGISTER.value:
                 self.client_register()
         except socket.error as e:
             logging.error(e)
