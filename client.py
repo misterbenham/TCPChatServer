@@ -155,7 +155,7 @@ class Client:
                     break
                 elif user_input == utility.LoggedInCommands.AUTHENTICATE_DIRECT_MESSAGE.value:
                     recipient = input("Who would you like to send a DM to?:\n")
-                    self.dm_recipient(recipient)
+                    self.dm_recipient(data, recipient)
                     break
                 elif user_input == utility.LoggedInCommands.ADD_FRIEND.value:
                     recipient = input("Type the username of the friend to add:\n")
@@ -206,20 +206,22 @@ class Client:
             except socket.error as e:
                 logging.error(e)
 
-    def dm_recipient(self, recipient):
+    def dm_recipient(self, data, recipient):
+        requester = data["addressee"]
         try:
             msg_input = self.build_message(utility.LoggedInCommands.AUTHENTICATE_DIRECT_MESSAGE.value, recipient,
-                                           None, None)
+                                           requester, None)
             self.client_send(msg_input)
         except socket.error as e:
             logging.error(e)
 
     def direct_messages(self, data):
+        requester = data["body"]
         while True:
             try:
                 msg_body = input(">")
                 msg_input = self.build_message(utility.LoggedInCommands.DIRECT_MESSAGE.value, data["addressee"],
-                                               msg_body, None)
+                                               msg_body, requester)
                 self.client_send(msg_input)
             except socket.error as e:
                 logging.error(e)

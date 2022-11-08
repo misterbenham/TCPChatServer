@@ -54,6 +54,7 @@ class Server:
         self.db = database.Database()
         self.db.create_users_table()
         self.db.create_friends_table()
+        self.db.create_messages_table()
         server_socket.listen()
         while True:
             self.accept_connection(server_socket)
@@ -144,7 +145,6 @@ class Server:
                         self.server_send(client_socket, response)
 
                         friends_list = self.db.view_friends(username)
-                        print(friends_list)
                         online_notification = self.build_message(utility.Responses.ONLINE_NOTIFICATION.value,
                                                                  username, None, None)
                         for username, client_socket in self.clients.items():
@@ -205,20 +205,22 @@ class Server:
             del self.clients[client_socket]
 
     def authenticate_direct_message(self, client_socket, data):
+        requester = data["body"]
         if data["addressee"] not in self.clients:
             response = self.build_message(utility.Responses.ERROR.value, None,
                                           "Username not found", None)
             self.server_send(client_socket, response)
         else:
             response = self.build_message(utility.LoggedInCommands.DIRECT_MESSAGE.value, data["addressee"],
-                                          None, None)
+                                          requester, None)
             self.server_send(client_socket, response)
 
     def direct_message(self, client_socket, data):
-        data["header"] = None
+        requester = data["extra_info"]
         username = data["addressee"]
         msg = data["body"]
         response = self.build_message(utility.LoggedInCommands.PRINT_DM.value, username, msg, None)
+        self.db.insert_message(requester, username, msg)
         client_socket = self.clients[username]
         self.server_send(client_socket, response)
 
