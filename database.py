@@ -1,8 +1,5 @@
-import datetime
 import sqlite3
-from xmlrpc.client import DateTime
 from datetime import datetime
-
 
 
 class Database:
@@ -124,7 +121,7 @@ class Database:
                               f" friends.status='SENT' AND friends.receiver=" \
                               f"(SELECT user_id FROM users" \
                               f" WHERE username = ?)"
-        self.cursor.execute(find_request_status, [user, ])
+        self.cursor.execute(find_request_status, [user])
         friend_requests = self.cursor.fetchall()
         return friend_requests
 
@@ -154,5 +151,3 @@ class Database:
         for i in friend_list:
             friend_list_usernames.append(i[0])
         return friend_list_usernames
-
-

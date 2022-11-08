@@ -222,7 +222,11 @@ class Client:
                 msg_body = input(">")
                 msg_input = self.build_message(utility.LoggedInCommands.DIRECT_MESSAGE.value, data["addressee"],
                                                msg_body, requester)
-                self.client_send(msg_input)
+                if msg_body == 'QUIT':
+                    break
+                else:
+                    self.client_send(msg_input)
+                    continue
             except socket.error as e:
                 logging.error(e)
 
