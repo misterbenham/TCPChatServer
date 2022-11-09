@@ -1,4 +1,5 @@
 import sqlite3
+from datetime import datetime
 
 
 class Database:
@@ -25,6 +26,12 @@ class Database:
                      f"sender TEXT, receiver TEXT, status TEXT)")
         self.commit()
 
+    def create_messages_table(self):
+        self.execute(f"CREATE TABLE IF NOT EXISTS messages (message_id INTEGER PRIMARY KEY, "
+                     f"sender TEXT, receiver TEXT, message TEXT, timestamp TEXT, "
+                     f"friend_id INTEGER, FOREIGN KEY (friend_id) REFERENCES friends(id))")
+        self.commit()
+
     def find_username_in_db(self, username):
         find_user = "SELECT * FROM users WHERE username = ?"
         self.cursor.execute(find_user, [username])
@@ -39,6 +46,18 @@ class Database:
         self.cursor.execute("SELECT * FROM users")
         rows = self.cursor.fetchall()
         return rows
+
+    def find_friendship_id(self, requester, recipient):
+        receiver = self.find_user_id(requester)
+        sender = self.find_user_id(recipient)
+        find_friendship_id = f"SELECT id FROM friends WHERE sender = ? AND receiver = ? " \
+                             f"UNION ALL SELECT id FROM friends WHERE sender = ? AND receiver = ?"
+        self.cursor.execute(find_friendship_id, [receiver, sender, sender, receiver])
+        retval = self.cursor.fetchone()
+        if retval:
+            return retval[0]
+        else:
+            return None
 
     def find_user_id(self, user):
         find_user_id = f"SELECT user_id FROM users WHERE username = ?"
@@ -77,6 +96,16 @@ class Database:
         self.cursor.execute(add_relationship, (sender, receiver, "SENT"))
         self.commit()
 
+    def insert_message(self, requester, recipient, message):
+        sender = self.find_user_id(requester)
+        receiver = self.find_user_id(recipient)
+        friend_id = self.find_friendship_id(requester, recipient)
+        timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        insert_message = f"INSERT INTO messages (sender, receiver, message, timestamp, friend_id) " \
+                         f"VALUES (?, ?, ?, ?, ?)"
+        self.cursor.execute(insert_message, (sender, receiver, message, timestamp, friend_id))
+        self.commit()
+
     def insert_username_and_password(self, username, password):
         add_user = f"INSERT INTO users (username, password, user_status) VALUES (?, ?, ?)"
         self.cursor.execute(add_user, (username, password, 'OFFLINE'))
@@ -92,7 +121,7 @@ class Database:
                               f" friends.status='SENT' AND friends.receiver=" \
                               f"(SELECT user_id FROM users" \
                               f" WHERE username = ?)"
-        self.cursor.execute(find_request_status, [user, ])
+        self.cursor.execute(find_request_status, [user])
         friend_requests = self.cursor.fetchall()
         return friend_requests
 
@@ -122,5 +151,3 @@ class Database:
         for i in friend_list:
             friend_list_usernames.append(i[0])
         return friend_list_usernames
-
-
