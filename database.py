@@ -152,18 +152,3 @@ class Database:
         self.cursor.execute(find_friends, [user, user])
         friend_list = self.cursor.fetchall()
         return friend_list
-
-    def view_friends(self, user):
-        find_friends = f"SELECT username FROM users INNER JOIN friends" \
-                       f" ON users.user_id=friends.sender WHERE" \
-                       f" friends.status='FRIENDS' AND friends.receiver = " \
-                       f"(SELECT user_id FROM users WHERE username = ?) UNION ALL" \
-                       f" SELECT username FROM users INNER JOIN friends ON" \
-                       f" users.user_id=friends.receiver WHERE" \
-                       f" friends.status='FRIENDS' AND friends.sender = (SELECT user_id FROM users WHERE username = ?)"
-        self.cursor.execute(find_friends, [user, user])
-        friend_list = self.cursor.fetchall()
-        friend_list_usernames = []
-        for i in friend_list:
-            friend_list_usernames.append(i[0])
-        return friend_list_usernames
