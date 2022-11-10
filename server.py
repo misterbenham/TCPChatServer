@@ -225,7 +225,6 @@ class Server:
         username = data["addressee"]
         msg = data["body"]
         response = self.build_message(utility.LoggedInCommands.PRINT_DM.value, username, msg, None)
-        self.db.fetch_messages(requester, username)
         self.db.insert_message(requester, username, msg)
         client_socket = self.clients[username]
         self.server_send(client_socket, response)
