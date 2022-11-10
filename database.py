@@ -47,6 +47,22 @@ class Database:
         rows = self.cursor.fetchall()
         return rows
 
+    def fetch_messages(self, requester, recipient):
+        sender = self.find_user_id(requester)
+        receiver = self.find_user_id(recipient)
+        fetch_messages = f"SELECT message FROM messages WHERE sender = ? AND receiver = ? " \
+                         f"OR sender = ? AND receiver = ? " \
+                         f"ORDER BY timestamp ASC LIMIT 10"
+        self.cursor.execute(fetch_messages, [receiver, sender, sender, receiver])
+        retval = self.cursor.fetchall()
+        previous_messages = []
+        for i in retval:
+            previous_messages.append(i[0])
+        if retval:
+            return previous_messages
+        else:
+            return None
+
     def find_friendship_id(self, requester, recipient):
         receiver = self.find_user_id(requester)
         sender = self.find_user_id(recipient)

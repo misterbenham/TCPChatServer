@@ -206,13 +206,15 @@ class Server:
 
     def authenticate_direct_message(self, client_socket, data):
         requester = data["body"]
-        if data["addressee"] not in self.clients:
+        recipient = data["addressee"]
+        if recipient not in self.clients:
             response = self.build_message(utility.Responses.ERROR.value, None,
                                           "Username not found", None)
             self.server_send(client_socket, response)
         else:
-            response = self.build_message(utility.LoggedInCommands.DIRECT_MESSAGE.value, data["addressee"],
-                                          requester, None)
+            previous_messages = self.db.fetch_messages(requester, recipient)
+            response = self.build_message(utility.LoggedInCommands.DIRECT_MESSAGE.value, recipient,
+                                          requester, previous_messages)
             self.server_send(client_socket, response)
 
     def direct_message(self, client_socket, data):
@@ -220,6 +222,7 @@ class Server:
         username = data["addressee"]
         msg = data["body"]
         response = self.build_message(utility.LoggedInCommands.PRINT_DM.value, username, msg, None)
+        self.db.fetch_messages(requester, username)
         self.db.insert_message(requester, username, msg)
         client_socket = self.clients[username]
         self.server_send(client_socket, response)

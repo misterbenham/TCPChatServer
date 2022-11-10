@@ -217,6 +217,9 @@ class Client:
 
     def direct_messages(self, data):
         requester = data["body"]
+        previous_messages = data["extra_info"]
+        for i in previous_messages:
+            print(i)
         while True:
             try:
                 msg_body = input(">")
