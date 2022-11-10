@@ -59,7 +59,6 @@ class Database:
         for i in retval:
             previous_messages.append(i[0])
         if retval:
-            print(previous_messages)
             return previous_messages
         else:
             return None
