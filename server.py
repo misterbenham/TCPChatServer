@@ -144,11 +144,14 @@ class Server:
                                                       utility.Responses.SUCCESS.value, None)
                         self.server_send(client_socket, response)
 
-                        friends_list = self.db.view_friends(username)
+                        friends_list = self.db.view_friends_and_status(username)
+                        friends_list_usernames = []
+                        for i in friends_list:
+                            friends_list_usernames.append(i[0])
                         online_notification = self.build_message(utility.Responses.ONLINE_NOTIFICATION.value,
                                                                  username, None, None)
                         for username, client_socket in self.clients.items():
-                            if username in friends_list:
+                            if username in friends_list_usernames:
                                 self.server_send(client_socket, online_notification)
                         break
                     else:
