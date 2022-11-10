@@ -218,6 +218,7 @@ class Client:
     def direct_messages(self, data):
         requester = data["body"]
         previous_messages = data["extra_info"]
+        previous_messages.reverse()
         for i in previous_messages:
             print(i)
         while True:
