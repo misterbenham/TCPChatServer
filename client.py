@@ -3,9 +3,7 @@ import logging
 import socket
 import sys
 import threading
-import time
 
-import user
 import utility
 
 logging.basicConfig(format='%(levelname)s:%(message)s', level=logging.INFO)
@@ -17,6 +15,9 @@ class Client:
     """
     The client socket is created and attempts to connect to
     the server on the defined host IP and port.
+
+    :param: host (str): IP address used to connect to server.
+    :param: port (int): PORT number used to connect to server.
     """
 
     def __init__(self, host: str, port: int):
@@ -28,6 +29,7 @@ class Client:
         """
         Connects client socket to server IP and port. Spins up thread for client_send
         function and runs receive in a loop (listens for new messages from server).
+        Starts the method for welcome menu().
         """
         try:
             logging.debug(f" Trying to connect to {self.host} : {self.port}...")
@@ -40,6 +42,11 @@ class Client:
             logging.error(e)
 
     def recv_json(self):
+        """
+        Method receives 'message' from the server and loads message json as 'data'.
+        Runs separate functions depending on the header of the json data.
+        Method run in a while true loop, so it constantly receives new data from server.
+        """
         while True:
             try:
                 message = self.recv_message(self.client_socket)
@@ -92,12 +99,20 @@ class Client:
     @staticmethod
     def recv_message(client_socket):
         """
-        Receives messages from client sockets.
+        Receives messages from client sockets (2048 bytes of data). Decodes using 'UTF-8'.
         """
         return client_socket.recv(BUFFER_SIZE).decode(ENCODE)
 
     @staticmethod
     def build_message(header, addressee, body, extra_info):
+        """
+       Static method takes in arguments and assigns them to a dictionary that it returns.
+
+       :param header: Variable to store header enum.
+       :param addressee: Variable to store usernames.
+       :param body: Variable to store messages.
+       :param extra_info: Variable to store an extra info required.
+       """
         x = {"header": header,
              "addressee": addressee,
              "body": body,
@@ -105,6 +120,13 @@ class Client:
         return x
 
     def client_send(self, msg_to_send):
+        """
+        Method takes the message dictionary and dumps into json message packet.
+        Json message packet is sent to the client.
+
+        :param client_socket: Socket of connected client.
+        :param msg_to_send: Parameter for (build_message) dictionary to be sent.
+        """
         try:
             msg_packet = json.dumps(msg_to_send)
             self.client_socket.send(msg_packet.encode(ENCODE))
@@ -112,6 +134,10 @@ class Client:
             logging.error(e)
 
     def welcome_menu(self):
+        """
+        Method runs once the main 'run' function starts. Asks the users whether they want to login or register.
+        Runs function for login or registration accordingly.
+        """
         try:
             user_input = input("What would you like to do? Type 'login' or 'register': ")
             if user_input.lower() == utility.LoginCommands.LOGIN.value:
@@ -122,6 +148,9 @@ class Client:
             logging.error(e)
 
     def client_login(self):
+        """
+        Asks user for their username and password to be sent to server along with LOGIN header, for login validation.
+        """
         uname = input("Enter username: ")
         pw = input("Enter password: ")
         msg_input = self.build_message(utility.LoginCommands.LOGIN.value, uname, pw, None)
@@ -129,6 +158,10 @@ class Client:
         return uname
 
     def client_register(self):
+        """
+        Asks user for new username and password. Ensures both password entries match. Sends username and password
+        inputs to server along with REGISTER header.
+        """
         uname = input("Enter new username: ")
         pw = input("Enter new password: ")
         pw2 = input("Re-enter password: ")
@@ -139,6 +172,12 @@ class Client:
             self.client_send(msg_input)
 
     def logged_in_menu(self, data):
+        """
+        Function runs once server has authenticated and logged in client. Menu displays a list of options that the
+        client can enter and runs separate functions accordingly.
+
+        :param data: Client username (str).
+        """
         try:
             for retry in range(3):
                 user_input = input(f"Please select an option from the menu: \n"
@@ -193,6 +232,12 @@ class Client:
             logging.error(e)
 
     def broadcast_messages(self, data):
+        """
+        Function runs when client requests to broadcast multiple messages to all connected clients. The user
+        enters a while true loop that constantly allows user input and sends every client message to the server
+        with the header "BROADCAST". The user exits the loop if and when they type in 'QUIT'.
+        :param data: Client username.
+        """
         while True:
             try:
                 msg_body = input(">")
@@ -207,6 +252,13 @@ class Client:
                 logging.error(e)
 
     def dm_recipient(self, data, recipient):
+        """
+        Function runs when client requests to direct message a specific user and enter a private chat room with
+        the requested individual. The function sends the header 'AUTHENTICATE_DIRECT_MESSAGE' to the server as
+        a pre-check to ensure that the user exists, the two users are friends and other checks take place.
+        :param data: client username
+        :param recipient: recipient username
+        """
         requester = data["addressee"]
         try:
             msg_input = self.build_message(utility.LoggedInCommands.AUTHENTICATE_DIRECT_MESSAGE.value, recipient,
@@ -216,6 +268,14 @@ class Client:
             logging.error(e)
 
     def direct_messages(self, data):
+        """
+        Function runs once the server has authenticated the request to direct message. A list of previous messages
+        (held in data parameter) has already been fetched by the server. The list is reversed to correct timeline order
+        and printed. The client then enters a while true loop, enabling them to constantly direct message the recipient
+        until the client inputs 'QUIT'. The messages are sent back to the server with the header 'DIRECT_MESSAGE' along
+        with the recipient to be distributed.
+        :param data: requester username, list of previous messages exchanged between clients.
+        """
         requester = data["body"]
         previous_messages = data["extra_info"]
         previous_messages.reverse()
@@ -235,11 +295,21 @@ class Client:
                 logging.error(e)
 
     def add_friend(self, data, recipient):
+        """
+        Function runs when the client requests to add a user as a friend. The function send a message to the server
+        with the header 'ADD_FRIEND' and the recipients' username to be processed by the server.
+        :param data: Client username.
+        :param recipient: Recipient username.
+        """
         msg_input = self.build_message(utility.LoggedInCommands.ADD_FRIEND.value, data["addressee"],
                                        recipient, None)
         self.client_send(msg_input)
 
 
 if __name__ == '__main__':
+    """
+    Instantiates the Client class with host (IP) and port numbers.
+    Runs the Client run function.
+    """
     client = Client('127.0.0.1', 5555)
     client.run()

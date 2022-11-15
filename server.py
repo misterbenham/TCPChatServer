@@ -1,5 +1,3 @@
-import hashlib
-
 import bcrypt
 import json
 import logging
@@ -7,7 +5,6 @@ import socket
 import threading
 
 import database
-import user
 import utility
 
 logging.basicConfig(format='%(levelname)s:%(message)s', level=logging.INFO)
@@ -21,12 +18,15 @@ class Server:
     Attributes:
         host (str): The IP address of the listening socket.
         port (int): The port number of the listening socket.
+        clients (dict): a client dictionary that stores client socket address and username.
+        db (database): Instance attribute of the database class.
     """
 
     @staticmethod
     def recv_message(client_socket):
         """
         Receives messages from client sockets.
+        Receives 2048 bytes of data and decodes using 'utf-8'.
         """
         return client_socket.recv(BUFFER_SIZE).decode(ENCODE)
 
@@ -40,6 +40,8 @@ class Server:
         """
         Creates the listening socket.
         Binds server to host IP and port.
+        Starts server socket listening for client sockets.
+        Creates an instance of the database and all tables.
         """
         logging.info(" Creating socket...")
         server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -62,7 +64,10 @@ class Server:
     def accept_connection(self, server_socket):
         """
         Accepts new client connections and spins up a thread for each new connection.
-        Appends client socket to list of clients[].
+        Passes the client_socket as an argument to the thread.
+        Appends client socket to dictionary of clients{}.
+
+        :param server_socket: Socket address of server
         """
         try:
             client_socket, client_address = server_socket.accept()
@@ -75,11 +80,12 @@ class Server:
 
     def handle_client_connection(self, client_socket):
         """
-        Function to handle clients connections.
-        Receives data and asks client to either login (1) or register (2).
+        Threaded function for each new connected client. Receives 'message' from the client sockets as json
+        and loads as 'data'. The header of the data is read and separate functions are run accordingly.
+
+        :param client_socket: Socket address of connected client.
         """
         while True:
-            # receive data from client
             try:
                 message = self.recv_message(client_socket)
                 data = json.loads(message)
@@ -125,9 +131,15 @@ class Server:
 
     def login(self, client_socket, data):
         """
-        Asks user to enter username. Searches DB for username. If valid, requests password to login
-        and sends user to open_chat_room(). If username is invalid (not in DB), the user must
-        try again.
+        Function run when client requests to login. Checks the db for client username. If not found, responds
+        with 'username not found'. If found, checks the username against given password in the db. If not a
+        match, responds to client with 'incorrect password'. If correct responds to client with LOGGED_IN header
+        allowing client to proceed to menu. Sets users status to 'ONLINE' IN DB. Also searches and fetched friend
+        list of client and sends all friends a notification that the connected client is now online. Adds client
+        username to the 'clients' dictionary with their client socket.
+
+        :param client_socket: Socket of connected client
+        :param data: LOGIN header, client username, given password
         """
         while True:
             try:
@@ -163,9 +175,13 @@ class Server:
 
     def register(self, client_socket, data):
         """
-        Asks user for new username. Searches DB for username. If already exists, notifies the user that
-        they must use another. Asks for password twice. Checks passwords match. Creates user and adds
-        them to DB. Sends user to login with new credentials.
+        Function run when client requests to register with new account. Checks the db against the requested
+        username given. If an exact username is found, a response is sent to client stating username is already in use
+        and to choose another. Else, the passwrd is hashed using bcrypt (and salted) and username/password are inserted
+        into the db. Server responds to client with 'REGISTERED' header, allowing the client to login.
+
+        :param client_socket: Socket of connected client.
+        :param data: REGISTER header, requested username (str), requested password (str).
         """
         while True:
             try:
@@ -191,8 +207,10 @@ class Server:
 
     def broadcast(self, client_socket, data):
         """
-        Function to broadcast messages to all connected clients,
-        except the sender client.
+        Function run on request of the client. Responds with message to all clients connected to client dictionary.
+
+        :param client_socket: Socket of connected client.
+        :param data: BROADCAST Header, client username (str), client message to broadcast (str).
         """
         try:
             data["header"] = None
@@ -208,6 +226,15 @@ class Server:
             del self.clients[client_socket]
 
     def authenticate_direct_message(self, client_socket, data):
+        """
+        Searches the given username against the db user table. If found, responds to the client
+        allowing them to direct message the recipient. Also fetches all previous messages between client and
+        recipient from the db messages table. Messages list is sent as a response to client.
+        If not found in db, responds to the client with a message 'username' not found.
+
+        :param client_socket: Connected client socket address
+        :param data: header (enum), client username (str), recipient username (str)
+        """
         requester = data["body"]
         recipient = data["addressee"]
         if recipient not in self.clients:
@@ -221,6 +248,12 @@ class Server:
             self.server_send(client_socket, response)
 
     def direct_message(self, client_socket, data):
+        """
+        Function sends messages from client to recipient and inserts messages into db.
+
+        :param client_socket: Socket of connected client.
+        :param data: requester username (str), recipient username (str), message to send (str)
+        """
         requester = data["extra_info"]
         username = data["addressee"]
         msg = data["body"]
@@ -230,6 +263,15 @@ class Server:
         self.server_send(client_socket, response)
 
     def friend_request(self, client_socket, data):
+        """
+        Function run when user requests to add another user as a friend. Recipient username is checked against the
+        db to ensure the user exists. If exists, inserts status 'SENT' to friends table in db. If status is already
+        'SENT', updates status to 'FRIENDS' and responds to the client accordingly (either friend request sent or
+        friend added).
+
+        :param client_socket: Socket of connected client.
+        :param data: Requester username (str), recipient username (str).
+        """
         requester = data["addressee"]
         recipient = data["body"]
         if not self.db.fetch_all_users_data(recipient):
@@ -246,6 +288,14 @@ class Server:
             self.server_send(client_socket, response)
 
     def view_friend_requests(self, client_socket, data):
+        """
+        Function that runs when user requests to view their friends requests sent to them.
+        Runs the database function to retrieve list of requests from db friends table.
+        Responds to the client with a list of friend request usernames.
+
+        :param client_socket: Socket of connected client.
+        :param data: VIEW_FRIEND_REQUESTS header (enum), requester username (str).
+        """
         requester = data["addressee"]
         friends_list = self.db.view_friend_requests(requester)
         response = self.build_message(utility.Responses.PRINT_FRIEND_REQUESTS.value, requester,
@@ -253,6 +303,14 @@ class Server:
         self.server_send(client_socket, response)
 
     def view_friends(self, client_socket, data):
+        """
+        Function that runs when user requests to view their friends list.
+        Runs the database function to retrieve list of friend from db friends table.
+        Responds to the client with a list of friends usernames.
+
+        :param client_socket: Socket of connected client.
+        :param data: Requester username (str).
+        """
         requester = data["addressee"]
         friends_list = self.db.view_friends_and_status(requester)
         response = self.build_message(utility.Responses.PRINT_FRIENDS_LIST.value, requester,
@@ -260,14 +318,29 @@ class Server:
         self.server_send(client_socket, response)
 
     def set_status(self, client_socket, data):
+        """
+        Function runs when client requests to change their status. Inserts given status into clients 'status' field
+        in the db users table. Responds back to the client confirming status update.
+
+        :param client_socket: Socket of connected client.
+        :param data: Client username (str), status requested (str).
+        """
         username = data["addressee"]
         status = data["body"]
         self.db.set_status(status, username)
-        response = self.build_message(utility.Responses.PRINT_STATUS_AWAY.value, username, "Status: AWAY", None)
+        response = self.build_message(utility.Responses.PRINT_STATUS_AWAY.value, username, f"Status: {status}", None)
         self.server_send(client_socket, response)
 
     @staticmethod
     def build_message(header, addressee, body, extra_info):
+        """
+        Static method takes in arguments and assigns them to a dictionary that it returns.
+
+        :param header: Variable to store header enum.
+        :param addressee: Variable to store usernames.
+        :param body: Variable to store messages.
+        :param extra_info: Variable to store an extra info required.
+        """
         x = {"header": header,
              "addressee": addressee,
              "body": body,
@@ -275,6 +348,13 @@ class Server:
         return x
 
     def server_send(self, client_socket, msg_to_send):
+        """
+        Method takes the message dictionary and dumps into json message packet.
+        Json message packet is sent to the client.
+
+        :param client_socket: Socket of connected client.
+        :param msg_to_send: Parameter for (build_message) dictionary to be sent.
+        """
         try:
             msg_packet = json.dumps(msg_to_send)
             self.send_message(client_socket, msg_packet)
@@ -282,6 +362,13 @@ class Server:
             logging.error(e)
 
     def quit(self, client_socket, data):
+        """
+        Function run when clients request to quit the application. Changes client status to 'OFFLINE'.
+        Removes client from clients dictionary and sends 'QUIT' header back to client.
+
+        :param client_socket: Socket of connected client.
+        :param data: Client username (str)
+        """
         try:
             username = data["addressee"]
             status = "OFFLINE"
@@ -296,10 +383,18 @@ class Server:
     def send_message(client_socket, msg):
         """
         Sends message (from server) to client socket.
+        Encodes message beforehand using 'utf-8'.
+
+        :param: client_socket: Socket of connected client.
+        :param: msg: The message packet to be sent to client.
         """
         client_socket.send(msg.encode(ENCODE))
 
 
 if __name__ == '__main__':
+    """
+    Instantiates the Server class with host (IP) and port numbers.
+    Runs the Server run function.
+    """
     server = Server('0.0.0.0', 5555)
     server.run()

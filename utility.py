@@ -2,6 +2,10 @@ import enum
 
 
 class LoginCommands(enum.Enum):
+    """
+    Enum Header values to be used for json packets.
+    Values for login commands.
+    """
     LOGIN = 'login'
     REGISTER = 'register'
     REGISTERED = 'registered'
@@ -9,6 +13,9 @@ class LoginCommands(enum.Enum):
 
 
 class LoggedInCommands(enum.Enum):
+    """
+    Header values for logged in commands.
+    """
     BROADCAST = 'broadcast'
     AUTHENTICATE_DIRECT_MESSAGE = 'dm'
     DIRECT_MESSAGE = 'direct_message'
@@ -22,6 +29,9 @@ class LoggedInCommands(enum.Enum):
 
 
 class Responses(enum.Enum):
+    """
+    Header values for responses.
+    """
     SUCCESS = 'success'
     ERROR = 'error'
     BROADCAST_MSG = 'broadcast_msg'
