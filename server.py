@@ -118,6 +118,11 @@ class Server:
                 elif data["header"] == utility.LoggedInCommands.VIEW_FRIENDS.value:
                     self.view_friends(client_socket, data)
                     continue
+                elif data["header"] == utility.LoggedInCommands.AUTH_TIC_TAC_TOE.value:
+                    self.authenticate_tic_tac_toe(client_socket, data)
+                    continue
+                elif data["header"] == utility.Responses.TIC_TAC_TOE_CONFIRM.value:
+                    print("CONFIRMED")
                 elif data["header"] == utility.LoggedInCommands.SET_STATUS_AWAY.value:
                     self.set_status(client_socket, data)
                     continue
@@ -316,6 +321,18 @@ class Server:
         response = self.build_message(utility.Responses.PRINT_FRIENDS_LIST.value, requester,
                                       "\n".join([x[0] + " : " + x[1] for x in friends_list]), None)
         self.server_send(client_socket, response)
+
+    def authenticate_tic_tac_toe(self, client_socket, data):
+        requester = data["addressee"]
+        recipient = data["body"]
+        if recipient not in self.clients:
+            response = self.build_message(utility.Responses.ERROR.value, None,
+                                          "Username not found", None)
+            self.server_send(client_socket, response)
+        else:
+            response = self.build_message(utility.Responses.TIC_TAC_TOE_REQUEST.value, requester,
+                                          recipient, None)
+            self.server_send(self.clients[recipient], response)
 
     def set_status(self, client_socket, data):
         """
