@@ -121,6 +121,8 @@ class Server:
                 elif data["header"] == utility.LoggedInCommands.AUTH_TIC_TAC_TOE.value:
                     self.authenticate_tic_tac_toe(client_socket, data)
                     continue
+                elif data["header"] == utility.Responses.TIC_TAC_TOE_CONFIRM.value:
+                    print("CONFIRMED")
                 elif data["header"] == utility.LoggedInCommands.SET_STATUS_AWAY.value:
                     self.set_status(client_socket, data)
                     continue
@@ -328,10 +330,9 @@ class Server:
                                           "Username not found", None)
             self.server_send(client_socket, response)
         else:
-            client_socket = data["body"]
-            response = self.build_message(utility.Responses.TIC_TAC_TOE_REQUEST.value, recipient,
-                                          f'Would you like to play TIC TAC TOE with {requester}?', requester)
-            self.server_send(client_socket, response)
+            response = self.build_message(utility.Responses.TIC_TAC_TOE_REQUEST.value, requester,
+                                          recipient, None)
+            self.server_send(self.clients[recipient], response)
 
     def set_status(self, client_socket, data):
         """

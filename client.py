@@ -84,7 +84,7 @@ class Client:
                     print(f'{data["addressee"]} { "is ONLINE!"}')
                     continue
                 elif data["header"] == utility.Responses.TIC_TAC_TOE_REQUEST.value:
-                    self.tic_tac_toe_request(data)
+                    print(f'{data["body"]} would like to play TIC TAC TOE!')
                     continue
                 elif data["header"] == utility.Responses.SUCCESS.value:
                     print(data["body"])
@@ -189,7 +189,8 @@ class Client:
                                    f"'af': Add Friend \n"
                                    f"'fr': View Friend Requests \n"
                                    f"'vf': View Friends \n"
-                                   f"'ttt' Tic Tac Toe \n"
+                                   f"'ttt': Tic Tac Toe Invite \n"
+                                   f"'pttt': Play Tic Tac Toe \n"
                                    f"'ssa' : Set Status Away \n"
                                    f"'help': Help \n"
                                    f"'quit' : Quit \n")
@@ -215,8 +216,7 @@ class Client:
                     self.client_send(msg_input)
                     break
                 elif user_input == utility.LoggedInCommands.AUTH_TIC_TAC_TOE.value:
-                    recipient = input("Who would you like to play with?:\n")
-                    self.send_tic_tac_toe_request(data, recipient)
+                    self.send_tic_tac_toe_request(data)
                     break
                 elif user_input == utility.LoggedInCommands.SET_STATUS_AWAY.value:
                     msg_input = self.build_message(utility.LoggedInCommands.SET_STATUS_AWAY.value, data["addressee"],
@@ -313,35 +313,31 @@ class Client:
                                        recipient, None)
         self.client_send(msg_input)
 
-    def send_tic_tac_toe_request(self, data, recipient):
-        msg_input = self.build_message(utility.LoggedInCommands.AUTH_TIC_TAC_TOE.value, data["addressee"],
+    def send_tic_tac_toe_request(self, data):
+        requester = data["addressee"]
+        recipient = input("Who would you like to play with?:\n")
+        logging.info(f'Request sent to {recipient} - Waiting for response...')
+        msg_input = self.build_message(utility.LoggedInCommands.AUTH_TIC_TAC_TOE.value, requester,
                                        recipient, None)
         self.client_send(msg_input)
 
-    def tic_tac_toe_request(self, data):
-        requester = data["extra_info"]
-        recipient = data["addressee"]
-        print(data["body"])
-        try:
-            for retry in range(3):
-                req_response = input('Press 1 for Yes, 2 for No \n')
-                if req_response == '1':
-                    msg_input = self.build_message(utility.Responses.TIC_TAC_TOE_CONFIRM.value, recipient,
-                                                   requester, None)
-                    self.client_send(msg_input)
-                elif req_response == '2':
-                    msg_input = self.build_message(utility.Responses.TIC_TAC_TOE_DENY.value, recipient,
-                                                   requester, None)
-                    self.client_send(msg_input)
-                else:
-                    logging.error("Invalid selection- Please try again...")
-            else:
-                logging.error("You keep making invalid choices...")
-                msg_input = self.build_message(utility.Responses.TIC_TAC_TOE_DENY.value, recipient,
-                                               requester, None)
-                self.client_send(msg_input)
-        except socket.error as e:
-            logging.error(e)
+    def tic_tac_toe_play(self, data):
+        requester = data["addressee"]
+        recipient = data["body"]
+        print(f'Would you like to play TIC TAC TOE with {requester}?')
+        req_response = input('Yes or No: \n')
+        print(req_response)
+        if req_response.lower() == 'yes':
+            print("CLIENT CONFIRM")
+            msg_input = self.build_message(utility.Responses.TIC_TAC_TOE_CONFIRM.value, recipient,
+                                           requester, None)
+            self.client_send(msg_input)
+        elif req_response.lower() == 'no':
+            msg_input = self.build_message(utility.Responses.TIC_TAC_TOE_DENY.value, recipient,
+                                           requester, None)
+            self.client_send(msg_input)
+        else:
+            logging.error("Please try again...")
 
 
 if __name__ == '__main__':

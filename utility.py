@@ -24,6 +24,7 @@ class LoggedInCommands(enum.Enum):
     VIEW_FRIEND_REQUESTS = 'fr'
     VIEW_FRIENDS = 'vf'
     AUTH_TIC_TAC_TOE = 'ttt'
+    PLAY_TIC_TAC_TOE = 'pttt'
     SET_STATUS_AWAY = 'ssa'
     HELP = 'help'
     QUIT = 'quit'
