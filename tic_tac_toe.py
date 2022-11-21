@@ -42,7 +42,7 @@ class TicTacToe:
     def game(self):
         while not self.gameOver:
             self.printHelpBoard()
-            for i in range(10):
+            while True:
                 print(f"It's your turn, {self.turn}. Move to which place?: \n")
                 self.printBoard(self.theBoard)
                 move = input()
@@ -52,50 +52,20 @@ class TicTacToe:
                 else:
                     print("Place already filled!\nMove to which place?")
 
-                if self.count >= 5:
-                    if self.theBoard['7'] == self.theBoard['8'] == self.theBoard['9'] != ' ':
-                        self.printBoard(self.theBoard)
-                        print("\nGame Over!")
-                        print(f"{self.turn} won!")
-                        break
-                    elif self.theBoard['4'] == self.theBoard['5'] == self.theBoard['6'] != ' ':
-                        self.printBoard(self.theBoard)
-                        print("\nGame Over!")
-                        print(f"{self.turn} won!")
-                        break
-                    elif self.theBoard['1'] == self.theBoard['2'] == self.theBoard['3'] != ' ':
-                        self.printBoard(self.theBoard)
-                        print("\nGame Over!")
-                        print(f"{self.turn} won!")
-                        break
-                    elif self.theBoard['1'] == self.theBoard['4'] == self.theBoard['7'] != ' ':
-                        self.printBoard(self.theBoard)
-                        print("\nGame Over!")
-                        print(f"{self.turn} won!")
-                        break
-                    elif self.theBoard['2'] == self.theBoard['5'] == self.theBoard['8'] != ' ':
-                        self.printBoard(self.theBoard)
-                        print("\nGame Over!")
-                        print(f"{self.turn} won!")
-                        break
-                    elif self.theBoard['3'] == self.theBoard['6'] == self.theBoard['9'] != ' ':
-                        self.printBoard(self.theBoard)
-                        print("\nGame Over!")
-                        print(f"{self.turn} won!")
-                        break
-                    elif self.theBoard['1'] == self.theBoard['5'] == self.theBoard['9'] != ' ':
-                        self.printBoard(self.theBoard)
-                        print("\nGame Over!")
-                        print(f"{self.turn} won!")
-                        break
-                    elif self.theBoard['3'] == self.theBoard['5'] == self.theBoard['7'] != ' ':
-                        self.printBoard(self.theBoard)
-                        print("\nGame Over!")
-                        print(f"{self.turn} won!")
-                        break
-                if self.count == 9:
-                    print("\nGame Over!")
-                    print("It's a tie!")
+                if self.count >= 9:
+                    space_list = [['7', '8', '9'], ['4', '5', '6'], ['1', '2', '3'], ['1', '4', '7'],
+                                  ['2', '5', '8'], ['3', '6', '9'], ['1', '5', '9'], ['3', '5', '7']]
+
+                    for win in space_list:
+                        if self.theBoard[win[0]] == self.theBoard[win[1]] == self.theBoard[win[2]] != ' ':
+                            self.printBoard(self.theBoard)
+                            print("\nGame Over!")
+                            print(f"{self.turn} won!")
+                            break
+                        if self.count == 9:
+                            print("\nGame Over!")
+                            print("It's a tie!")
+                            break
                     break
 
                 if self.turn == 'X':
