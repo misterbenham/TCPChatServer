@@ -22,37 +22,41 @@ class TicTacToe:
 
     @staticmethod
     def printBoard(board):
-        print(board['7'] + '|' + board['8'] + '|' + board['9'])
+        print(f"{board['7']}{'|'}{board['8']}{'|'}{board['9']}")
         print('-+-+-')
-        print(board['4'] + '|' + board['5'] + '|' + board['6'])
+        print(f"{board['4']}{'|'}{board['5']}{'|'}{board['6']}")
         print('-+-+-')
-        print(board['1'] + '|' + board['2'] + '|' + board['3'])
+        print(f"{board['1']}{'|'}{board['2']}{'|'}{board['3']}")
 
     @staticmethod
     def printHelpBoard():
         print("Use the NumPad to select the space you want...")
         print()
-        print('7' + '|' + '8' + '|' + '9')
+        print('7|8|9')
         print('-+-+-')
-        print('4' + '|' + '5' + '|' + '6')
+        print('4|5|6')
         print('-+-+-')
-        print('1' + '|' + '2' + '|' + '3')
+        print('1|2|3')
         print()
 
     def game(self):
-        while not self.gameOver:
-            self.printHelpBoard()
-            while True:
+        while True:
+            while not self.gameOver:
+                self.printHelpBoard()
+
                 print(f"It's your turn, {self.turn}. Move to which place?: \n")
                 self.printBoard(self.theBoard)
                 move = input()
-                if self.theBoard[move] == ' ':
-                    self.theBoard[move] = self.turn
-                    self.count += 1
-                else:
-                    print("Place already filled!\nMove to which place?")
 
-                if self.count >= 9:
+                while self.theBoard[move] != ' ':
+                    print("Place already filled!\nMove to which place?")
+                    move = input()
+
+                self.theBoard[move] = self.turn
+                self.count += 1
+                print(f"Count is: {self.count}")
+
+                if self.count >= 5:
                     space_list = [['7', '8', '9'], ['4', '5', '6'], ['1', '2', '3'], ['1', '4', '7'],
                                   ['2', '5', '8'], ['3', '6', '9'], ['1', '5', '9'], ['3', '5', '7']]
 
@@ -61,12 +65,14 @@ class TicTacToe:
                             self.printBoard(self.theBoard)
                             print("\nGame Over!")
                             print(f"{self.turn} won!")
+                            self.gameOver = True
                             break
-                        if self.count == 9:
-                            print("\nGame Over!")
-                            print("It's a tie!")
-                            break
-                    break
+
+                    if self.count == 9:
+                        self.printBoard(self.theBoard)
+                        print("\nGame Over!")
+                        print("It's a tie!")
+                        self.gameOver = True
 
                 if self.turn == 'X':
                     self.turn = 'O'
@@ -77,8 +83,7 @@ class TicTacToe:
             if restart == 'yes':
                 self.setupNewGame(self.turn)
             else:
-                self.gameOver = True
-                break
+                pass
 
 
 ttt = TicTacToe(turn='X')
