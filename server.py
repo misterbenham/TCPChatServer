@@ -57,6 +57,7 @@ class Server:
         self.db.create_users_table()
         self.db.create_friends_table()
         self.db.create_messages_table()
+        self.db.create_ttt_table()
         server_socket.listen()
         while True:
             self.accept_connection(server_socket)
@@ -120,6 +121,9 @@ class Server:
                     continue
                 elif data["header"] == utility.LoggedInCommands.AUTH_TIC_TAC_TOE.value:
                     self.authenticate_tic_tac_toe(client_socket, data)
+                    continue
+                elif data["header"] == utility.LoggedInCommands.VIEW_TIC_TAC_TOE_REQUESTS.value:
+                    self.view_ttt_requests(client_socket, data)
                     continue
                 elif data["header"] == utility.Responses.TIC_TAC_TOE_CONFIRM.value:
                     print("CONFIRMED")
@@ -330,6 +334,7 @@ class Server:
                                           "Username not found", None)
             self.server_send(client_socket, response)
         else:
+            self.db.insert_ttt_game_request(requester, recipient)
             response = self.build_message(utility.Responses.TIC_TAC_TOE_REQUEST.value, requester,
                                           recipient, None)
             self.server_send(self.clients[recipient], response)
@@ -377,6 +382,13 @@ class Server:
             self.send_message(client_socket, msg_packet)
         except socket.error as e:
             logging.error(e)
+
+    def view_ttt_requests(self, client_socket, data):
+        requester = data["addressee"]
+        ttt_request_list = self.db.view_ttt_requests(requester)
+        response = self.build_message(utility.Responses.PRINT_TTT_REQUESTS.value, requester,
+                                      "\n".join([x[0] for x in ttt_request_list]), None)
+        self.server_send(client_socket, response)
 
     def quit(self, client_socket, data):
         """
