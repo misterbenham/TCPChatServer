@@ -68,7 +68,7 @@ class TicTacToe:
                             self.gameOver = True
                             break
 
-                    if self.count == 9:
+                    if self.count == 9 and not self.gameOver:
                         self.printBoard(self.theBoard)
                         print("\nGame Over!")
                         print("It's a tie!")
@@ -83,7 +83,7 @@ class TicTacToe:
             if restart == 'yes':
                 self.setupNewGame(self.turn)
             else:
-                pass
+                break
 
 
 ttt = TicTacToe(turn='X')
