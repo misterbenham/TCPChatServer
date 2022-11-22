@@ -48,6 +48,12 @@ class Database:
                      f"friend_id INTEGER, FOREIGN KEY (friend_id) REFERENCES friends(id))")
         self.commit()
 
+    def create_ttt_table(self):
+        self.execute(f"CREATE TABLE IF NOT EXISTS ttt (game_id INTEGER PRIMARY KEY,"
+                     f" sender TEXT, receiver TEXT, status TEXT, timestamp TEXT,"
+                     f" friend_id INTEGER, FOREIGN KEY (friend_id) REFERENCES friends(id))")
+        self.commit()
+
     def find_username_in_db(self, username):
         """
         Function uses an SQL 'SELECT' statement to select and return TRUE if it finds the username passed to it.
@@ -206,6 +212,16 @@ class Database:
         self.cursor.execute(insert_message, (sender, receiver, message, timestamp, friend_id))
         self.commit()
 
+    def insert_ttt_game_request(self, requester, recipient):
+        sender = self.find_user_id(requester)
+        receiver = self.find_user_id(recipient)
+        friend_id = self.find_friendship_id(requester, recipient)
+        timestamp = datetime.now().strftime("%Y-%m-%d %H-%M-%S")
+        insert_game = f"INSERT INTO ttt (sender, receiver, status, timestamp, friend_id) " \
+                      f"VALUES (?, ?, ?, ?, ?)"
+        self.cursor.execute(insert_game, (sender, receiver, 'SENT', timestamp, friend_id))
+        self.commit()
+
     def insert_username_and_password(self, username, password):
         """
         Function uses an 'SQL' INSERT statement to insert the username and password passed to it.
@@ -242,6 +258,21 @@ class Database:
         self.cursor.execute(find_request_status, [user])
         friend_requests = self.cursor.fetchall()
         return friend_requests
+
+    def view_ttt_requests(self, user):
+        """
+        Function selects and returns all usernames from the friend's table where the status between passed requester
+        and recipient is 'SENT'. An 'inner join' and 'sub-statement' are used in the SQL statement.
+        :param user: Username of client.
+        :return: List of friend requests received by user.
+        """
+        find_request_status = f"SELECT username FROM users INNER JOIN ttt ON users.user_id=ttt.sender WHERE" \
+                              f" ttt.status='SENT' AND ttt.receiver=" \
+                              f"(SELECT user_id FROM users" \
+                              f" WHERE username = ?)"
+        self.cursor.execute(find_request_status, [user])
+        ttt_requests = self.cursor.fetchall()
+        return ttt_requests
 
     def view_friends_and_status(self, user):
         """

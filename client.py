@@ -80,6 +80,9 @@ class Client:
                 elif data["header"] == utility.Responses.PRINT_STATUS_AWAY.value:
                     print(data["body"])
                     continue
+                elif data["header"] == utility.Responses.PRINT_TTT_REQUESTS.value:
+                    print(f"You have Tic Tac Toe requests from: \n{data['body']}")
+                    continue
                 elif data["header"] == utility.Responses.ONLINE_NOTIFICATION.value:
                     logging.info(f'{data["addressee"]} { "is ONLINE!"}')
                     continue
@@ -190,7 +193,7 @@ class Client:
                                    f"'fr': View Friend Requests \n"
                                    f"'vf': View Friends \n"
                                    f"'ttt': Tic Tac Toe Invite \n"
-                                   f"'pttt': Play Tic Tac Toe \n"
+                                   f"'vttt': Tic Tac Toe Requests\n"
                                    f"'ssa' : Set Status Away \n"
                                    f"'help': Help \n"
                                    f"'quit' : Quit \n")
@@ -217,6 +220,11 @@ class Client:
                     break
                 elif user_input == utility.LoggedInCommands.AUTH_TIC_TAC_TOE.value:
                     self.send_tic_tac_toe_request(data)
+                    break
+                elif user_input == utility.LoggedInCommands.VIEW_TIC_TAC_TOE_REQUESTS.value:
+                    msg_input = self.build_message(utility.LoggedInCommands.VIEW_TIC_TAC_TOE_REQUESTS.value,
+                                                   data["addressee"], None, None)
+                    self.client_send(msg_input)
                     break
                 elif user_input == utility.LoggedInCommands.SET_STATUS_AWAY.value:
                     msg_input = self.build_message(utility.LoggedInCommands.SET_STATUS_AWAY.value, data["addressee"],
