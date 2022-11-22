@@ -127,6 +127,8 @@ class Server:
                     continue
                 elif data["header"] == utility.Responses.TIC_TAC_TOE_CONFIRM.value:
                     print("CONFIRMED")
+                elif data["header"] == utility.Responses.TIC_TAC_TOE_DENY.value:
+                    print("DENIED")
                 elif data["header"] == utility.LoggedInCommands.SET_STATUS_AWAY.value:
                     self.set_status(client_socket, data)
                     continue
@@ -387,7 +389,7 @@ class Server:
         requester = data["addressee"]
         ttt_request_list = self.db.view_ttt_requests(requester)
         response = self.build_message(utility.Responses.PRINT_TTT_REQUESTS.value, requester,
-                                      "\n".join([x[0] for x in ttt_request_list]), None)
+                                      ttt_request_list, None)
         self.server_send(client_socket, response)
 
     def quit(self, client_socket, data):
