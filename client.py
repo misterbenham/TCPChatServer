@@ -81,16 +81,16 @@ class Client:
                     print(data["body"])
                     continue
                 elif data["header"] == utility.Responses.ONLINE_NOTIFICATION.value:
-                    print(f'{data["addressee"]} { "is ONLINE!"}')
+                    logging.info(f'{data["addressee"]} { "is ONLINE!"}')
                     continue
                 elif data["header"] == utility.Responses.TIC_TAC_TOE_REQUEST.value:
-                    print(f'{data["body"]} would like to play TIC TAC TOE!')
+                    logging.info(f'{data["body"]} would like to play TIC TAC TOE!')
                     continue
                 elif data["header"] == utility.Responses.SUCCESS.value:
-                    print(data["body"])
+                    logging.info(data["body"])
                     continue
                 elif data["header"] == utility.Responses.ERROR.value:
-                    print(data["body"])
+                    logging.error(data["body"])
                     continue
                 elif data["header"] == utility.LoggedInCommands.QUIT.value:
                     sys.exit()
