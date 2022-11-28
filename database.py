@@ -222,6 +222,13 @@ class Database:
         self.cursor.execute(insert_game, (sender, receiver, 'SENT', timestamp, friend_id))
         self.commit()
 
+    def insert_ttt_game_response(self, requester, recipient, status):
+        sender = self.find_user_id(requester)
+        receiver = self.find_user_id(recipient)
+        update_response = f"UPDATE ttt SET status = ? WHERE sender = ? AND receiver = ?"
+        self.cursor.execute(update_response, [status, receiver, sender])
+        self.commit()
+
     def insert_username_and_password(self, username, password):
         """
         Function uses an 'SQL' INSERT statement to insert the username and password passed to it.

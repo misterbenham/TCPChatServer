@@ -5,6 +5,7 @@ import socket
 import threading
 
 import database
+import ttt_game
 import utility
 
 logging.basicConfig(format='%(levelname)s:%(message)s', level=logging.INFO)
@@ -31,6 +32,8 @@ class Server:
         return client_socket.recv(BUFFER_SIZE).decode(ENCODE)
 
     def __init__(self, host: str, port: int):
+        self.recipient = None
+        self.requester = None
         self.host = host
         self.port = port
         self.clients = {}
@@ -108,7 +111,7 @@ class Server:
                     self.authenticate_direct_message(client_socket, data)
                     continue
                 elif data["header"] == utility.LoggedInCommands.DIRECT_MESSAGE.value:
-                    self.direct_message(client_socket, data)
+                    self.direct_message(data)
                     continue
                 elif data["header"] == utility.LoggedInCommands.ADD_FRIEND.value:
                     self.friend_request(client_socket, data)
@@ -126,9 +129,22 @@ class Server:
                     self.view_ttt_requests(client_socket, data)
                     continue
                 elif data["header"] == utility.Responses.TIC_TAC_TOE_CONFIRM.value:
-                    print("CONFIRMED")
+                    requester = data["addressee"]
+                    recipient = data["body"]
+                    self.db.insert_ttt_game_response(requester, recipient, "CONFIRM")
+                    self.start_game(data)
+                    continue
+                elif data["header"] == utility.Responses.PLAY_TIC_TAC_TOE.value:
+                    self.play_tic_tac_toe(data)
+                    continue
+                elif data["header"] == utility.Responses.TIC_TAC_TOE_ERROR.value:
+                    self.play_tic_tac_toe(data)
+                    continue
                 elif data["header"] == utility.Responses.TIC_TAC_TOE_DENY.value:
-                    print("DENIED")
+                    requester = data["addressee"]
+                    recipient = data["body"]
+                    self.db.insert_ttt_game_response(requester, recipient, "DENY")
+                    continue
                 elif data["header"] == utility.LoggedInCommands.SET_STATUS_AWAY.value:
                     self.set_status(client_socket, data)
                     continue
@@ -258,7 +274,7 @@ class Server:
                                           requester, previous_messages)
             self.server_send(client_socket, response)
 
-    def direct_message(self, client_socket, data):
+    def direct_message(self, data):
         """
         Function sends messages from client to recipient and inserts messages into db.
 
@@ -270,8 +286,7 @@ class Server:
         msg = data["body"]
         response = self.build_message(utility.LoggedInCommands.PRINT_DM.value, username, msg, None)
         self.db.insert_message(requester, username, msg)
-        client_socket = self.clients[username]
-        self.server_send(client_socket, response)
+        self.server_send(self.clients[username], response)
 
     def friend_request(self, client_socket, data):
         """
@@ -297,6 +312,47 @@ class Server:
             response = self.build_message(utility.Responses.SUCCESS.value, None,
                                           "Friend request sent", None)
             self.server_send(client_socket, response)
+
+    def start_game(self, data):
+        ttt = ttt_game.TicTacToe()
+        self.requester = data["addressee"]
+        self.recipient = data["body"]
+        help_board = ttt.getHelpBoard()
+        turn_dict = {self.requester: 'X', self.recipient: 'O'}
+        turn = turn_dict[self.requester]
+        ttt.setupNewGame(turn=None, move=None)
+        theBoard = ttt.theBoard
+        response = self.build_message(utility.Responses.PLAY_TIC_TAC_TOE.value, self.requester,
+                                      self.recipient, [help_board, theBoard, turn, turn_dict])
+        self.server_send(self.clients[self.recipient], response)
+
+    def play_tic_tac_toe(self, data):
+        board = data['extra_info'][0]
+        turn_dict = data["extra_info"][3]
+        turn = data["extra_info"][1]
+        move = data["extra_info"][2]
+        ttt = ttt_game.TicTacToe()
+        help_board = ttt.getHelpBoard()
+        updatedBoard, turn = ttt.updateBoard(board, turn, move)
+        if isinstance(updatedBoard, dict):
+            self.requester, self.recipient = self.recipient, self.requester
+            if data["header"] == utility.Responses.TIC_TAC_TOE_ERROR.value:
+                turn = turn_dict[self.requester]
+                response = self.build_message(utility.Responses.PLAY_TIC_TAC_TOE.value, self.requester,
+                                              self.recipient, [help_board, updatedBoard, turn, turn_dict])
+                self.server_send(self.clients[self.recipient], response)
+
+            else:
+                turn = turn_dict[self.requester]
+                response = self.build_message(utility.Responses.PLAY_TIC_TAC_TOE.value, self.requester,
+                                              self.recipient, [help_board, updatedBoard, turn, turn_dict])
+                self.server_send(self.clients[self.recipient], response)
+        elif isinstance(updatedBoard, str):
+            if updatedBoard == utility.Responses.TIC_TAC_TOE_SPACE_ERROR.value:
+                turn = turn_dict[self.recipient]
+                response = self.build_message(utility.Responses.TIC_TAC_TOE_ERROR.value, self.requester,
+                                              self.requester, [help_board, board, turn, turn_dict])
+                self.server_send(self.clients[self.recipient], response)
 
     def view_friend_requests(self, client_socket, data):
         """
