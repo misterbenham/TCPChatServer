@@ -57,10 +57,6 @@ class Server:
             logging.error(e)
         logging.info(f" Server is listening on port {self.port}...")
         self.db = database.Database()
-        self.db.create_users_table()
-        self.db.create_friends_table()
-        self.db.create_messages_table()
-        self.db.create_ttt_table()
         server_socket.listen()
         while True:
             self.accept_connection(server_socket)
@@ -317,13 +313,13 @@ class Server:
         ttt = ttt_game.TicTacToe()
         self.requester = data["addressee"]
         self.recipient = data["body"]
-        help_board = ttt.getHelpBoard()
+        help_board = ttt.get_help_board()
         turn_dict = {self.requester: 'X', self.recipient: 'O'}
         turn = turn_dict[self.requester]
-        ttt.setupNewGame(turn=None, move=None)
-        theBoard = ttt.theBoard
+        ttt.setup_new_game(None, None)
+        the_board = ttt.the_board
         response = self.build_message(utility.Responses.PLAY_TIC_TAC_TOE.value, self.requester,
-                                      self.recipient, [help_board, theBoard, turn, turn_dict])
+                                      self.recipient, [help_board, the_board, turn, turn_dict])
         self.server_send(self.clients[self.recipient], response)
 
     def play_tic_tac_toe(self, data):
@@ -332,23 +328,23 @@ class Server:
         turn = data["extra_info"][1]
         move = data["extra_info"][2]
         ttt = ttt_game.TicTacToe()
-        help_board = ttt.getHelpBoard()
-        updatedBoard, turn = ttt.updateBoard(board, turn, move)
-        if isinstance(updatedBoard, dict):
+        help_board = ttt.get_help_board()
+        updated_board, turn = ttt.updateBoard(board, turn, move)
+        if isinstance(updated_board, dict):
             self.requester, self.recipient = self.recipient, self.requester
             if data["header"] == utility.Responses.TIC_TAC_TOE_ERROR.value:
                 turn = turn_dict[self.requester]
                 response = self.build_message(utility.Responses.PLAY_TIC_TAC_TOE.value, self.requester,
-                                              self.recipient, [help_board, updatedBoard, turn, turn_dict])
+                                              self.recipient, [help_board, updated_board, turn, turn_dict])
                 self.server_send(self.clients[self.recipient], response)
 
             else:
                 turn = turn_dict[self.requester]
                 response = self.build_message(utility.Responses.PLAY_TIC_TAC_TOE.value, self.requester,
-                                              self.recipient, [help_board, updatedBoard, turn, turn_dict])
+                                              self.recipient, [help_board, updated_board, turn, turn_dict])
                 self.server_send(self.clients[self.recipient], response)
-        elif isinstance(updatedBoard, str):
-            if updatedBoard == utility.Responses.TIC_TAC_TOE_SPACE_ERROR.value:
+        elif isinstance(updated_board, str):
+            if updated_board == utility.Responses.TIC_TAC_TOE_SPACE_ERROR.value:
                 turn = turn_dict[self.recipient]
                 response = self.build_message(utility.Responses.TIC_TAC_TOE_ERROR.value, self.requester,
                                               self.requester, [help_board, board, turn, turn_dict])

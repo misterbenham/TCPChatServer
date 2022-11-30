@@ -363,7 +363,7 @@ class Client:
         turn_dict = data['extra_info'][3]
         board = data['extra_info'][1]
         print(f"{data['extra_info'][0]}\n"
-              f"{ttt_game.TicTacToe.getBoard(board)}\n")
+              f"{ttt_game.TicTacToe.get_board(board)}\n")
         move = input(f"It's your turn {turn}. Move to which place?: \n")
         msg_input = self.build_message(utility.Responses.PLAY_TIC_TAC_TOE.value,
                                        requester, recipient, [board, turn, move, turn_dict])

@@ -9,6 +9,10 @@ class Database:
         """Initialise db class variables"""
         self.connection = sqlite3.connect(self.DB_LOCATION, check_same_thread=False)
         self.cursor = self.connection.cursor()
+        self.create_users_table()
+        self.create_friends_table()
+        self.create_messages_table()
+        self.create_ttt_table()
 
     def execute(self, new_data):
         """
