@@ -9,6 +9,10 @@ class Database:
         """Initialise db class variables"""
         self.connection = sqlite3.connect(self.DB_LOCATION, check_same_thread=False)
         self.cursor = self.connection.cursor()
+        self.create_users_table()
+        self.create_friends_table()
+        self.create_messages_table()
+        self.create_ttt_table()
 
     def execute(self, new_data):
         """
@@ -220,6 +224,13 @@ class Database:
         insert_game = f"INSERT INTO ttt (sender, receiver, status, timestamp, friend_id) " \
                       f"VALUES (?, ?, ?, ?, ?)"
         self.cursor.execute(insert_game, (sender, receiver, 'SENT', timestamp, friend_id))
+        self.commit()
+
+    def insert_ttt_game_response(self, requester, recipient, status):
+        sender = self.find_user_id(requester)
+        receiver = self.find_user_id(recipient)
+        update_response = f"UPDATE ttt SET status = ? WHERE sender = ? AND receiver = ?"
+        self.cursor.execute(update_response, [status, receiver, sender])
         self.commit()
 
     def insert_username_and_password(self, username, password):

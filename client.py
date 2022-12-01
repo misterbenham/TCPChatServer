@@ -5,6 +5,7 @@ import sys
 import threading
 import time
 
+import ttt_game
 import utility
 
 logging.basicConfig(format='%(levelname)s:%(message)s', level=logging.INFO)
@@ -88,6 +89,12 @@ class Client:
                     continue
                 elif data["header"] == utility.Responses.ONLINE_NOTIFICATION.value:
                     logging.info(f'{data["addressee"]} { "is ONLINE!"}')
+                    continue
+                elif data["header"] == utility.Responses.PLAY_TIC_TAC_TOE.value:
+                    self.play_tic_tac_toe(data)
+                    continue
+                elif data["header"] == utility.Responses.TIC_TAC_TOE_ERROR.value:
+                    self.tic_tact_toe_error(data)
                     continue
                 elif data["header"] == utility.Responses.TIC_TAC_TOE_REQUEST.value:
                     logging.info(f'{data["body"]} would like to play TIC TAC TOE!')
@@ -334,19 +341,44 @@ class Client:
 
     def tic_tac_toe_invite_response(self, data):
         requester = data["addressee"]
-        recipient = data["body"]
         time.sleep(1)
         for user in data["body"]:
             response = input(f"Would you like to play ttt with {user[0]}?: ")
             if response == 'yes':
                 msg_input = self.build_message(utility.Responses.TIC_TAC_TOE_CONFIRM.value,
-                                               requester, recipient, None)
+                                               requester, user[0], None)
                 self.client_send(msg_input)
+                logging.info(f"Response 'CONFIRM' sent to {user[0]}. They will go first...")
                 break
             else:
                 msg_input = self.build_message(utility.Responses.TIC_TAC_TOE_DENY.value,
-                                               requester, recipient, None)
+                                               requester, user[0], None)
                 self.client_send(msg_input)
+            break
+
+    def play_tic_tac_toe(self, data):
+        requester = data["body"]
+        recipient = data["addressee"]
+        turn = data['extra_info'][2]
+        turn_dict = data['extra_info'][3]
+        board = data['extra_info'][1]
+        print(f"{data['extra_info'][0]}\n"
+              f"{ttt_game.TicTacToe.get_board(board)}\n")
+        move = input(f"It's your turn {turn}. Move to which place?: \n")
+        msg_input = self.build_message(utility.Responses.PLAY_TIC_TAC_TOE.value,
+                                       requester, recipient, [board, turn, move, turn_dict])
+        self.client_send(msg_input)
+
+    def tic_tact_toe_error(self, data):
+        requester = data["body"]
+        recipient = data["addressee"]
+        turn_dict = data['extra_info'][3]
+        turn = turn_dict[recipient]
+        board = data['extra_info'][1]
+        move = input("Please choose another: ")
+        msg_input = self.build_message(utility.Responses.TIC_TAC_TOE_ERROR.value,
+                                       requester, recipient, [board, turn, move, turn_dict])
+        self.client_send(msg_input)
 
 
 if __name__ == '__main__':

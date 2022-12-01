@@ -45,3 +45,6 @@ class Responses(enum.Enum):
     TIC_TAC_TOE_REQUEST = 'tttr'
     TIC_TAC_TOE_CONFIRM = 'tttc'
     TIC_TAC_TOE_DENY = 'tttd'
+    PLAY_TIC_TAC_TOE = 'pttt'
+    TIC_TAC_TOE_ERROR = 'ttte'
+    TIC_TAC_TOE_SPACE_ERROR = 'Space already filled!'
