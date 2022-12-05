@@ -94,11 +94,16 @@ class Client:
                     self.play_tic_tac_toe(data)
                     continue
                 elif data["header"] == utility.Responses.TIC_TAC_TOE_ERROR.value:
-                    self.tic_tact_toe_error(data)
+                    self.tic_tac_toe_error(data)
                     continue
                 elif data["header"] == utility.Responses.TIC_TAC_TOE_REQUEST.value:
                     logging.info(f'{data["body"]} would like to play TIC TAC TOE!')
                     continue
+                elif data["header"] == utility.Responses.TIC_TAC_TOE_WINNER.value:
+                    logging.info(data["extra_info"][3])
+                    continue
+                elif data["header"] == utility.Responses.TIC_TAC_TOE_TIE.value:
+                    logging.info(data["extra_info"][3])
                 elif data["header"] == utility.Responses.SUCCESS.value:
                     logging.info(data["body"])
                     continue
@@ -363,13 +368,13 @@ class Client:
         turn_dict = data['extra_info'][3]
         board = data['extra_info'][1]
         print(f"{data['extra_info'][0]}\n"
-              f"{ttt_game.TicTacToe.get_board(board)}\n")
+              f"{ttt_game.get_board(board)}\n")
         move = input(f"It's your turn {turn}. Move to which place?: \n")
         msg_input = self.build_message(utility.Responses.PLAY_TIC_TAC_TOE.value,
                                        requester, recipient, [board, turn, move, turn_dict])
         self.client_send(msg_input)
 
-    def tic_tact_toe_error(self, data):
+    def tic_tac_toe_error(self, data):
         requester = data["body"]
         recipient = data["addressee"]
         turn_dict = data['extra_info'][3]
