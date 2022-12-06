@@ -104,6 +104,7 @@ class Client:
                     continue
                 elif data["header"] == utility.Responses.TIC_TAC_TOE_TIE.value:
                     logging.info(data["extra_info"][3])
+                    continue
                 elif data["header"] == utility.Responses.SUCCESS.value:
                     logging.info(data["body"])
                     continue
