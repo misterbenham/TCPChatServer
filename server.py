@@ -170,7 +170,10 @@ class Server:
                 pw = data["body"].encode(ENCODE)
                 user_in_db = self.db.find_username_in_db(username)
                 if not user_in_db:
-                    self.send_message(client_socket, "Username not found. Please enter username: ")
+                    response = self.build_message(utility.LoginCommands.LOGIN.value, None,
+                                                  "Username not found. Please enter username: ", None)
+                    self.server_send(client_socket, response)
+                    break
                 else:
                     if bcrypt.checkpw(pw, user_in_db[0][2]):
                         self.clients[username] = client_socket
@@ -190,7 +193,10 @@ class Server:
                                 self.server_send(client_socket, online_notification)
                         break
                     else:
-                        self.send_message(client_socket, "Incorrect credentials. Please enter username: ")
+                        response = self.build_message(utility.LoginCommands.LOGIN.value, None,
+                                                      "Incorrect credentials. Please enter username: ", None)
+                        self.server_send(client_socket, response)
+                        break
             except socket.error as e:
                 client_socket.close()
                 logging.error(e)
