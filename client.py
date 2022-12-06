@@ -60,6 +60,10 @@ class Client:
                 elif data["header"] == utility.LoginCommands.REGISTERED.value:
                     self.client_login()
                     continue
+                elif data["header"] == utility.LoginCommands.LOGIN.value:
+                    print(data["body"])
+                    self.client_login()
+                    continue
                 elif data["header"] == utility.LoginCommands.LOGGED_IN.value:
                     menu_thread = threading.Thread(target=self.logged_in_menu, args=(data, ))
                     menu_thread.start()
