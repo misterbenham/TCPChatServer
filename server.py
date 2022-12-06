@@ -310,14 +310,12 @@ class Server:
             self.server_send(client_socket, response)
 
     def start_game(self, data):
-        ttt = ttt_game.TicTacToe()
         self.requester = data["addressee"]
         self.recipient = data["body"]
-        help_board = ttt.get_help_board()
+        help_board = ttt_game.get_help_board()
         turn_dict = {self.requester: 'X', self.recipient: 'O'}
         turn = turn_dict[self.requester]
-        ttt.setup_new_game(None, None)
-        the_board = ttt.the_board
+        the_board = ttt_game.return_new_board()
         response = self.build_message(utility.Responses.PLAY_TIC_TAC_TOE.value, self.requester,
                                       self.recipient, [help_board, the_board, turn, turn_dict])
         self.server_send(self.clients[self.recipient], response)
@@ -327,9 +325,8 @@ class Server:
         turn_dict = data["extra_info"][3]
         turn = data["extra_info"][1]
         move = data["extra_info"][2]
-        ttt = ttt_game.TicTacToe()
-        help_board = ttt.get_help_board()
-        updated_board, turn = ttt.updateBoard(board, turn, move)
+        help_board = ttt_game.get_help_board()
+        updated_board, turn = ttt_game.updateBoard(board, turn, move)
         if isinstance(updated_board, dict):
             self.requester, self.recipient = self.recipient, self.requester
             if data["header"] == utility.Responses.TIC_TAC_TOE_ERROR.value:
@@ -347,8 +344,20 @@ class Server:
             if updated_board == utility.Responses.TIC_TAC_TOE_SPACE_ERROR.value:
                 turn = turn_dict[self.recipient]
                 response = self.build_message(utility.Responses.TIC_TAC_TOE_ERROR.value, self.requester,
-                                              self.requester, [help_board, board, turn, turn_dict])
+                                              self.recipient, [help_board, board, turn, turn_dict])
                 self.server_send(self.clients[self.recipient], response)
+            elif updated_board == 'won':
+                response = self.build_message(utility.Responses.TIC_TAC_TOE_WINNER.value, self.requester,
+                                              self.recipient, [help_board, board, turn,
+                                                               f'Game Over! {turn} won!'])
+                self.server_send(self.clients[self.recipient], response)
+                self.server_send(self.clients[self.requester], response)
+            elif updated_board == 'tie':
+                response = self.build_message(utility.Responses.TIC_TAC_TOE_TIE.value, self.requester,
+                                              self.recipient, [help_board, board, turn,
+                                                               f"Game Over! It's a tie!"])
+                self.server_send(self.clients[self.recipient], response)
+                self.server_send(self.clients[self.requester], response)
 
     def view_friend_requests(self, client_socket, data):
         """

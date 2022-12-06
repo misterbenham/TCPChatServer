@@ -48,3 +48,5 @@ class Responses(enum.Enum):
     PLAY_TIC_TAC_TOE = 'pttt'
     TIC_TAC_TOE_ERROR = 'ttte'
     TIC_TAC_TOE_SPACE_ERROR = 'Space already filled!'
+    TIC_TAC_TOE_WINNER = 'tttwin'
+    TIC_TAC_TOE_TIE = 'tttt'
