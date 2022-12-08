@@ -194,7 +194,7 @@ class Server:
                         break
                     else:
                         response = self.build_message(utility.LoginCommands.LOGIN.value, None,
-                                                      "Incorrect credentials. Please enter username: ", None)
+                                                      "Incorrect credentials. Please try again...", None)
                         self.server_send(client_socket, response)
                         break
             except socket.error as e:
