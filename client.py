@@ -37,9 +37,26 @@ class Client:
             logging.debug(f" Trying to connect to {self.host} : {self.port}...")
             self.client_socket.connect((self.host, self.port))
             logging.info(f" Successfully connected to {self.host} : {self.port}")
-            recv_json_thread = threading.Thread(target=self.recv_json)
-            recv_json_thread.start()
             self.welcome_menu()
+        except socket.error as e:
+            logging.error(e)
+
+    def welcome_menu(self):
+        """
+        Method runs once the main 'run' function starts. Asks the users whether they want to login or register.
+        Runs function for login or registration accordingly.
+        """
+        try:
+            while True:
+                user_input = input("What would you like to do? Type 'login' or 'register': ")
+                if user_input.lower() == utility.LoginCommands.LOGIN.value:
+                    self.client_login()
+                    break
+                elif user_input.lower() == utility.LoginCommands.REGISTER.value:
+                    self.client_register()
+                    break
+                else:
+                    logging.error("Incorrect entry. Please try again...")
         except socket.error as e:
             logging.error(e)
 
@@ -53,32 +70,22 @@ class Client:
             try:
                 message = self.recv_message(self.client_socket)
                 data = json.loads(message)
-                if data["header"] == utility.LoginCommands.REGISTER.value:
-                    print(data["body"])
-                    self.client_register()
-                    continue
-                elif data["header"] == utility.LoginCommands.REGISTERED.value:
-                    self.client_login()
-                    continue
-                elif data["header"] == utility.LoginCommands.LOGIN.value:
-                    print(data["body"])
-                    self.client_login()
-                    continue
-                elif data["header"] == utility.LoginCommands.LOGGED_IN.value:
-                    menu_thread = threading.Thread(target=self.logged_in_menu, args=(data, ))
-                    menu_thread.start()
-                    continue
-                elif data["header"] == utility.Responses.BROADCAST_MSG.value:
+                if data["header"] == utility.Responses.BROADCAST_MSG.value:
                     print(f"{data['addressee']} {':'} {data['body']}")
                     continue
                 elif data["header"] == utility.LoggedInCommands.DIRECT_MESSAGE.value:
                     self.direct_messages(data)
+                    continue
+                elif data["header"] == utility.Responses.DM_ERROR.value:
+                    print(data["body"])
+                    self.main_menu(data)
                     continue
                 elif data["header"] == utility.LoggedInCommands.PRINT_DM.value:
                     print(data["addressee"], data["body"])
                     continue
                 elif data["header"] == utility.Responses.PRINT_FRIEND_REQUESTS.value:
                     print(data["body"])
+                    self.main_menu(data)
                     continue
                 elif data["header"] == utility.Responses.PRINT_FRIENDS_LIST.value:
                     print(data["body"])
@@ -92,7 +99,7 @@ class Client:
                     self.tic_tac_toe_invite_response(data)
                     continue
                 elif data["header"] == utility.Responses.ONLINE_NOTIFICATION.value:
-                    logging.info(f'{data["addressee"]} { "is ONLINE!"}')
+                    logging.info(f'{data["addressee"]} {"is ONLINE!"}')
                     continue
                 elif data["header"] == utility.Responses.PLAY_TIC_TAC_TOE.value:
                     self.play_tic_tac_toe(data)
@@ -105,9 +112,11 @@ class Client:
                     continue
                 elif data["header"] == utility.Responses.TIC_TAC_TOE_WINNER.value:
                     logging.info(data["extra_info"][3])
+                    self.main_menu(data)
                     continue
                 elif data["header"] == utility.Responses.TIC_TAC_TOE_TIE.value:
                     logging.info(data["extra_info"][3])
+                    self.main_menu(data)
                     continue
                 elif data["header"] == utility.Responses.SUCCESS.value:
                     logging.info(data["body"])
@@ -159,20 +168,6 @@ class Client:
         except socket.error as e:
             logging.error(e)
 
-    def welcome_menu(self):
-        """
-        Method runs once the main 'run' function starts. Asks the users whether they want to login or register.
-        Runs function for login or registration accordingly.
-        """
-        try:
-            user_input = input("What would you like to do? Type 'login' or 'register': ")
-            if user_input.lower() == utility.LoginCommands.LOGIN.value:
-                self.client_login()
-            elif user_input.lower() == utility.LoginCommands.REGISTER.value:
-                self.client_register()
-        except socket.error as e:
-            logging.error(e)
-
     def client_login(self):
         """
         Asks user for their username and password to be sent to server along with LOGIN header, for login validation.
@@ -181,7 +176,19 @@ class Client:
         pw = input("Enter password: ")
         msg_input = self.build_message(utility.LoginCommands.LOGIN.value, uname, pw, None)
         self.client_send(msg_input)
-        return uname
+        while True:
+            message = self.recv_message(self.client_socket)
+            data = json.loads(message)
+            if data["header"] == utility.LoginCommands.LOGGED_IN.value:
+                recv_json_thread = threading.Thread(target=self.recv_json)
+                recv_json_thread.start()
+                self.menu_print()
+                self.main_menu(data)
+                break
+            elif data["header"] == utility.LoginCommands.LOGIN.value:
+                print(data["body"])
+                self.welcome_menu()
+                break
 
     def client_register(self):
         """
@@ -196,8 +203,32 @@ class Client:
         else:
             msg_input = self.build_message(utility.LoginCommands.REGISTER.value, uname, pw, None)
             self.client_send(msg_input)
+            while True:
+                message = self.recv_message(self.client_socket)
+                data = json.loads(message)
+                if data["header"] == utility.LoginCommands.REGISTERED.value:
+                    self.client_login()
+                    break
+                elif data["header"] == utility.LoginCommands.REGISTER.value:
+                    print(data["body"])
+                    self.welcome_menu()
+                    break
 
-    def logged_in_menu(self, data):
+    @staticmethod
+    def menu_print():
+        print(f"Please select an option from the menu: \n"
+              f"'broadcast' : Broadcast \n"
+              f"'dm': Direct Message \n"
+              f"'af': Add Friend \n"
+              f"'fr': View Friend Requests \n"
+              f"'vf': View Friends \n"
+              f"'ttt': Tic Tac Toe Invite \n"
+              f"'vttt': Tic Tac Toe Requests\n"
+              f"'ssa' : Set Status Away \n"
+              f"'help': Help \n"
+              f"'quit' : Quit \n")
+
+    def main_menu(self, data):
         """
         Function runs once server has authenticated and logged in client. Menu displays a list of options that the
         client can enter and runs separate functions accordingly.
@@ -205,18 +236,8 @@ class Client:
         :param data: Client username (str).
         """
         try:
-            for retry in range(3):
-                user_input = input(f"Please select an option from the menu: \n"
-                                   f"'broadcast' : Broadcast \n"
-                                   f"'dm': Direct Message \n"
-                                   f"'af': Add Friend \n"
-                                   f"'fr': View Friend Requests \n"
-                                   f"'vf': View Friends \n"
-                                   f"'ttt': Tic Tac Toe Invite \n"
-                                   f"'vttt': Tic Tac Toe Requests\n"
-                                   f"'ssa' : Set Status Away \n"
-                                   f"'help': Help \n"
-                                   f"'quit' : Quit \n")
+            while True:
+                user_input = input()
                 if user_input == utility.LoggedInCommands.BROADCAST.value:
                     self.broadcast_messages(data)
                     break
@@ -247,7 +268,8 @@ class Client:
                     self.client_send(msg_input)
                     break
                 elif user_input == utility.LoggedInCommands.SET_STATUS_AWAY.value:
-                    msg_input = self.build_message(utility.LoggedInCommands.SET_STATUS_AWAY.value, data["addressee"],
+                    msg_input = self.build_message(utility.LoggedInCommands.SET_STATUS_AWAY.value,
+                                                   data["addressee"],
                                                    "AWAY", None)
                     self.client_send(msg_input)
                     break
@@ -262,8 +284,6 @@ class Client:
                     break
                 else:
                     logging.error("Invalid selection- Please try again...")
-            else:
-                logging.error("You keep making invalid choices...")
         except socket.error as e:
             logging.error(e)
 
@@ -280,6 +300,7 @@ class Client:
                 msg_input = self.build_message(utility.LoggedInCommands.BROADCAST.value, data["addressee"],
                                                msg_body, None)
                 if msg_body == "QUIT":
+                    self.main_menu(data)
                     break
                 else:
                     self.client_send(msg_input)
@@ -314,15 +335,17 @@ class Client:
         """
         requester = data["body"]
         previous_messages = data["extra_info"]
-        previous_messages.reverse()
-        for i in previous_messages:
-            print(i)
+        if previous_messages:
+            previous_messages.reverse()
+            for i in previous_messages:
+                print(i)
         while True:
             try:
                 msg_body = input(">")
                 msg_input = self.build_message(utility.LoggedInCommands.DIRECT_MESSAGE.value, data["addressee"],
                                                msg_body, requester)
                 if msg_body == 'QUIT':
+                    self.main_menu(data)
                     break
                 else:
                     self.client_send(msg_input)
@@ -340,6 +363,7 @@ class Client:
         msg_input = self.build_message(utility.LoggedInCommands.ADD_FRIEND.value, data["addressee"],
                                        recipient, None)
         self.client_send(msg_input)
+        self.main_menu(data)
 
     def send_tic_tac_toe_request(self, data):
         requester = data["addressee"]

@@ -194,7 +194,7 @@ class Server:
                         break
                     else:
                         response = self.build_message(utility.LoginCommands.LOGIN.value, None,
-                                                      "Incorrect credentials. Please enter username: ", None)
+                                                      "Incorrect credentials. Please try again...", None)
                         self.server_send(client_socket, response)
                         break
             except socket.error as e:
@@ -228,11 +228,11 @@ class Server:
                     response = self.build_message(utility.LoginCommands.REGISTERED.value, None,
                                                   utility.Responses.SUCCESS.value, None)
                     self.server_send(client_socket, response)
+                    break
             except socket.error as e:
                 logging.error(e)
                 client_socket.close()
                 self.clients.pop(client_socket)
-            break
 
     def broadcast(self, client_socket, data):
         """
@@ -327,10 +327,8 @@ class Server:
         self.server_send(self.clients[self.recipient], response)
 
     def play_tic_tac_toe(self, data):
-        board = data['extra_info'][0]
-        turn_dict = data["extra_info"][3]
-        turn = data["extra_info"][1]
-        move = data["extra_info"][2]
+        board, turn, move, turn_dict = [data['extra_info'][0], data['extra_info'][1],
+                                        data['extra_info'][2], data['extra_info'][3]]
         help_board = ttt_game.get_help_board()
         updated_board, turn = ttt_game.updateBoard(board, turn, move)
         if isinstance(updated_board, dict):

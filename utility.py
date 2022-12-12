@@ -37,6 +37,7 @@ class Responses(enum.Enum):
     SUCCESS = 'success'
     ERROR = 'error'
     BROADCAST_MSG = 'broadcast_msg'
+    DM_ERROR = 'dme'
     PRINT_FRIEND_REQUESTS = 'pfr'
     PRINT_FRIENDS_LIST = 'pfl'
     PRINT_STATUS_AWAY = 'ssa'
