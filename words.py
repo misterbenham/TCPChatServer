@@ -28,7 +28,12 @@ def get_word():
 
             for line in output_words_list:
                 wf.writelines(f"{line}\n")
-    get_word()
+
+    with open(WORDS_TEXT_FILE, "r") as rf:
+        output_words_list = rf.readlines()
+        chosen_word = random.choice(output_words_list)
+        print(chosen_word)
+        return chosen_word
 
 
 get_word()
