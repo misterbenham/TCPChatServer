@@ -3,18 +3,19 @@ import random
 import requests
 
 WORD_SITE = "https://www.mit.edu/~ecprice/wordlist.10000"
+WORDS_TEXT_FILE = "words.txt"
 
 
 def get_word():
     is_file = os.path.isfile('words.txt')
     if is_file:
-        with open("words.txt", "r") as rf:
+        with open(WORDS_TEXT_FILE, "r") as rf:
             output_words_list = rf.readlines()
             chosen_word = random.choice(output_words_list)
             print(chosen_word)
             return chosen_word
     else:
-        with open("words.txt", "w") as wf:
+        with open(WORDS_TEXT_FILE, "w") as wf:
             response = requests.get(WORD_SITE)
             word_list = response.content.splitlines()
             output_words_list = []
