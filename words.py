@@ -19,7 +19,6 @@ def get_word():
             wf.writelines(f"{line}\n" for line in words)
 
     chosen_word = random.choice(words)
-    print(chosen_word)
     return chosen_word
 
 
