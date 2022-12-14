@@ -7,33 +7,20 @@ WORDS_TEXT_FILE = "words.txt"
 
 
 def get_word():
-    is_file = os.path.isfile('words.txt')
+    is_file = os.path.isfile(WORDS_TEXT_FILE)
     if is_file:
         with open(WORDS_TEXT_FILE, "r") as rf:
-            output_words_list = rf.readlines()
-            chosen_word = random.choice(output_words_list)
-            print(chosen_word)
-            return chosen_word
+            words = rf.readlines()
     else:
+        response = requests.get(WORD_SITE)
+        words = response.content.splitlines()
         with open(WORDS_TEXT_FILE, "w") as wf:
-            response = requests.get(WORD_SITE)
-            word_list = response.content.splitlines()
-            output_words_list = []
+            words = [word.decode('utf-8') for word in words if len(word) == 5]
+            wf.writelines(f"{line}\n" for line in words)
 
-            for word in word_list:
-                selected = word.decode('utf-8')
-
-                if len(selected) == 5:
-                    output_words_list.append(selected)
-
-            for line in output_words_list:
-                wf.writelines(f"{line}\n")
-
-    with open(WORDS_TEXT_FILE, "r") as rf:
-        output_words_list = rf.readlines()
-        chosen_word = random.choice(output_words_list)
-        print(chosen_word)
-        return chosen_word
+    chosen_word = random.choice(words)
+    print(chosen_word)
+    return chosen_word
 
 
 get_word()
