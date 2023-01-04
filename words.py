@@ -7,8 +7,7 @@ WORDS_TEXT_FILE = "words.txt"
 
 
 def get_word():
-    is_file = os.path.isfile(WORDS_TEXT_FILE)
-    if is_file:
+    if os.path.isfile(WORDS_TEXT_FILE):
         with open(WORDS_TEXT_FILE, "r") as rf:
             words = rf.readlines()
     else:
@@ -19,7 +18,5 @@ def get_word():
             wf.writelines(f"{line}\n" for line in words)
 
     chosen_word = random.choice(words)
-    return chosen_word
+    return chosen_word.strip()
 
-
-get_word()

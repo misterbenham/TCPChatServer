@@ -48,7 +48,7 @@ class Client:
         """
         try:
             while True:
-                user_input = input("What would you like to do? Type 'login' or 'register': ")
+                user_input = input("What would you like to do? Type '1' for login or 2 for 'register': ")
                 if user_input.lower() == utility.LoginCommands.LOGIN.value:
                     self.client_login()
                     break

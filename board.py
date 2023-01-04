@@ -15,7 +15,7 @@ GREY = "#5d636b"
 root.config(bg=BLACK)
 root.geometry("340x320")
 
-guess_num = 1
+guess_num = 0
 
 word_input = Entry(root)
 word_input.grid(row=999, column=0, padx=15, pady=20, ipady=8, ipadx=8, columnspan=3)
@@ -25,26 +25,26 @@ def getGuess():
     global word
     global guess_num
     guess = word_input.get()
-    guess_num += 1
 
-    if guess_num <= 5:
-        if len(guess) == 5:
-            if guess == word:
-                messagebox.showinfo("correct!", f"Correct! The word was {word}!")
-            else:
-                for i, letter in enumerate(guess):
-                    label = Label(root, text=letter.upper())
-                    label.grid(row=guess_num, column=i, padx=5, pady=10, ipadx=15, ipady=10)
-                    if letter == word[i]:
-                        label.config(bg=GREEN, fg=BLACK)
-                    elif letter in word and not letter == word[i]:
-                        label.config(bg=YELLOW, fg=BLACK)
-                    elif letter not in word:
-                        label.config(bg=GREY, fg=WHITE)
-        else:
-            messagebox.showerror("please use 5 characters", "Please use 5 characters in your guess...")
+    if len(guess) != 5:
+        messagebox.showerror("please use 5 characters", "Please use 5 characters in your guess...")
     else:
-        messagebox.showerror("you lose!", f"You Lose! The word was '{word}!'")
+        print(guess_num)
+        for i, letter in enumerate(guess):
+            label = Label(root, text=letter.upper())
+            label.grid(row=guess_num, column=i, padx=5, pady=10, ipadx=15, ipady=10)
+            if letter == word[i]:
+                label.config(bg=GREEN, fg=BLACK)
+            elif letter in word and not letter == word[i]:
+                label.config(bg=YELLOW, fg=BLACK)
+            elif letter not in word:
+                label.config(bg=GREY, fg=WHITE)
+        if guess == word:
+            messagebox.showinfo("correct!", f"Correct! The word was {word}!")
+        if guess_num == 4:
+            messagebox.showerror("you lose!", f"You Lose! The word was '{word}!'")
+
+        guess_num += 1
 
 
 word_guess_button = Button(root, text="Guess", command=getGuess)
